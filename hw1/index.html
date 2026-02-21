@@ -166,7 +166,13 @@
 
       In the previous task, we only had one resolution of the texture. In a mip
       map, we have multiple resolutions of the texture (specifically,
-      resolutions of powers of 2 factors smaller than the original texture).
+      resolutions of powers of 2 factors smaller than the original texture). We want to sample resolutions depending on the Jacobian of each triangle which represents its depth distortion. Specifically, if we find that the triangle is very distorted, which we represent by the derivative of texel map coordinates with respect to screen coordinates, then a large area of texture maps to a small area of the screen and we can afford a lower resolution in this area. Whereas if we have a flatter triangle where this derivative is lesser, the map is more one to one and we require a higher resolution. This motivates the formulas for L and d in mipmap level sampling. 
+
+	  We implement this procedure by approximating the du(dv)/dx(dy) derivatives using finite differences, and then use the maximum of these derivatives to determine the appropriate mipmap level. 
+
+	  We could either sampling levels by always sampling the highest resolution (which is L_zero, memory efficient as we dont even need the mipmap), rounding the above-decribed level to the nearest mipmap level (L_nearest, which is less memory efficient as now it requires the mipmap and requires a bit more computation for those derivatives), or doing linear interpolation (L_LINEAR) which is similarly memory inefficient and also a bit more computationally expensive as we have to sample two texel maps and interpolate between them for one pixel. 
+	  
+	  
 
       <h2>(Optional) Task 7: Extra Credit - Draw Something Creative!</h2>
     </div>
