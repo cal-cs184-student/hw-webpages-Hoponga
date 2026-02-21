@@ -51,8 +51,16 @@
 		Give a high-level overview of what you implemented in this homework. Think about what you've built as a whole. Share your thoughts on what interesting things you've learned from completing the homework.
 
 		<h2>Task 1: Drawing Single-Color Triangles</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
+		We rasterize triangles by first drawing a bounding box around the triangle (by taking the min x and max x of the triangle points and correspondingly for y), so our algorithm performs no worse than one that checks the bounding box as it does just check the bounding box. 
+
+		Then, for each pixel in the bounding box, we check if the pixel is inside the triangle by using barycentric coordinates, specifically using the ratio of area formula for barycentric coordinates and ensuring that they sum to one. 
+
+
+		<figure>
+			<img src="/Users/krangana/hw1-rasterizer-pgang/build/screenshot_2-21_2-23-25.png" alt="Lion" style="width:50%"/>
+			<figcaption>Example image for Task 1.</figcaption>
+		</figure>
 		<p>Here is an example 2x2 gridlike structure using an HTML table. Each <b>tr</b> is a row and each <b>td</b> is a column in that row. You might find this useful for framing and showing your result images in an organized fashion.</p>
 		<div style="display: flex; flex-direction: column; align-items: center;">
 			<table style="width: 100%; text-align: center; border-collapse: collapse;">
