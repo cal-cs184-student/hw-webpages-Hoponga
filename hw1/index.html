@@ -1,134 +1,176 @@
 <html>
-	<head>
-		<script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=default'></script>
-		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-		<style>
-			h1 {
-				text-align: center;
-			}
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=default"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      h1 {
+        text-align: center;
+      }
 
-			.container {
-				margin: 0 auto;
-				padding: 60px 20%;
-			}
+      .container {
+        margin: 0 auto;
+        padding: 60px 20%;
+      }
 
-			figure {
-				text-align: center;
-			}
+      figure {
+        text-align: center;
+      }
 
-			img { 
-				display: inline-block;
-			}
+      img {
+        display: inline-block;
+      }
 
-			body {
-				font-family: 'Inter', sans-serif;
-			}
-		</style>
-	</head>
-	<body>
-		<div class="container">
-		<h1>CS184/284A Spring 2025 Homework 1 Write-Up</h1>
-		<div style="text-align: center;">Names: </div>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>CS184/284A Spring 2025 Homework 1 Write-Up</h1>
+      <div style="text-align: center">Names:</div>
 
-		<br>
+      <br />
 
-		Link to webpage: (TODO) <a href="https://cs184.eecs.berkeley.edu/sp25">cs184.eecs.berkeley.edu/sp25</a>
-		
-		<br>
+      Link to webpage: (TODO)
+      <a href="https://cs184.eecs.berkeley.edu/sp25"
+        >cs184.eecs.berkeley.edu/sp25</a
+      >
 
-		Link to GitHub repository: (TODO) <a href="https://cs184.eecs.berkeley.edu/sp25">cs184.eecs.berkeley.edu/sp25</a>
+      <br />
 
-		<figure>
-			<img src="lion.jpg" alt="Lion" style="width:50%"/>
-			<figcaption>You can add images with captions!</figcaption>
-		</figure>
+      Link to GitHub repository: (TODO)
+      <a href="https://cs184.eecs.berkeley.edu/sp25"
+        >cs184.eecs.berkeley.edu/sp25</a
+      >
 
-		<!--
+      <figure>
+        <img src="lion.jpg" alt="Lion" style="width: 50%" />
+        <figcaption>You can add images with captions!</figcaption>
+      </figure>
+
+      <!--
 		We've already added one heading per task, to make your write-up as navigable when grading. Please fit your write-up within these sections!
 		-->
 
-		<h2>Overview</h2>
-		Give a high-level overview of what you implemented in this homework. Think about what you've built as a whole. Share your thoughts on what interesting things you've learned from completing the homework.
+      <h2>Overview</h2>
+      Give a high-level overview of what you implemented in this homework. Think
+      about what you've built as a whole. Share your thoughts on what
+      interesting things you've learned from completing the homework.
 
-		<h2>Task 1: Drawing Single-Color Triangles</h2>
+      <h2>Task 1: Drawing Single-Color Triangles</h2>
 
-		We rasterize triangles by first drawing a bounding box around the triangle (by taking the min x and max x of the triangle points and correspondingly for y), so our algorithm performs no worse than one that checks the bounding box as it does just check the bounding box. 
+      We rasterize triangles by first drawing a bounding box around the triangle
+      (by taking the min x and max x of the triangle points and correspondingly
+      for y), so our algorithm performs no worse than one that checks the
+      bounding box as it does just check the bounding box. Then, for each pixel
+      in the bounding box, we check if the pixel is inside the triangle by using
+      barycentric coordinates, specifically using the ratio of area formula for
+      barycentric coordinates and ensuring that they sum to one.
 
-		Then, for each pixel in the bounding box, we check if the pixel is inside the triangle by using barycentric coordinates, specifically using the ratio of area formula for barycentric coordinates and ensuring that they sum to one. 
+      <figure>
+        <img
+          src="hw1/screenshot_2-21_2-23-25.png"
+          alt="Lion"
+          style="width: 50%"
+        />
+        <figcaption>Example image for Task 1.</figcaption>
+      </figure>
 
+      <h2>Task 2: Antialiasing by Supersampling</h2>
 
-		<figure>
-			<img src="hw1/screenshot_2-21_2-23-25.png" alt="Lion" style="width:50%"/>
-			<figcaption>Example image for Task 1.</figcaption>
-		</figure>
-		
-		
-		<h2>Task 2: Antialiasing by Supersampling</h2>
-		
-		Our supersampling algorithm "splits" every pixel into a grid of subpixels and then checks if each subpixel is inside a particular triangle. Each of these subpixel colors is stored in a sample buffer, and when the true frame buffer colors are required for rendering, we average out the colors of the subpixels in the sample buffer to get the true pixel color that is shown. 
+      Our supersampling algorithm "splits" every pixel into a grid of subpixels
+      and then checks if each subpixel is inside a particular triangle. Each of
+      these subpixel colors is stored in a sample buffer, and when the true
+      frame buffer colors are required for rendering, we average out the colors
+      of the subpixels in the sample buffer to get the true pixel color that is
+      shown. Supersampling is useful because it allows us to get smoother edges
+      on our triangles, as we can capture more detail about the triangle's shape
+      by checking the subpixels. This is especially important for small
+      triangles that may only cover a few pixels, as without supersampling they
+      may appear jagged or aliased. We can notice the effects of supersampling
+      in the image below by zooming in on the "jaggies" which with supersampling
+      rate 16 are smoother. Without supersampling:
+      <figure>
+        <img src="without_supersampling.png" alt="Lion" style="width: 50%" />
+        <figcaption>No supersampling has a ton of jaggies</figcaption>
+      </figure>
 
-		Supersampling is useful because it allows us to get smoother edges on our triangles, as we can capture more detail about the triangle's shape by checking the subpixels. This is especially important for small triangles that may only cover a few pixels, as without supersampling they may appear jagged or aliased. We can notice the effects of supersampling in the image below by zooming in on the "jaggies" which with supersampling rate 16 are smoother. 
+      With supersampling (rate 4):
+      <figure>
+        <img src="with_supersampling_4.png" alt="Lion" style="width: 50%" />
+        <figcaption>Rate 4 supersampling</figcaption>
+      </figure>
+      With supersampling (rate 16):
+      <figure>
+        <img src="with_supersampling_16.png" alt="Lion" style="width: 50%" />
+        <figcaption>
+          We see with supersampling rate 16 that the edges are much smoother.
+        </figcaption>
+      </figure>
 
-		Without supersampling: 
-		<figure>
-			<img src="without_supersampling.png" alt="Lion" style="width:50%"/>
-			<figcaption>No supersampling has a ton of jaggies</figcaption>
-		</figure>
+      <h2>Task 3: Transforms</h2>
 
-		With supersampling (rate 4): 
-		<figure>
-			<img src="with_supersampling_4.png" alt="Lion" style="width:50%"/>
-			<figcaption>Rate 4 supersampling </figcaption>
-		</figure>
-		With supersampling (rate 16): 
-		<figure>
-			<img src="with_supersampling_16.png" alt="Lion" style="width:50%"/>
-			<figcaption>We see with supersampling rate 16 that the edges are much smoother.</figcaption>
-		</figure>
-		
-		
-		<h2>Task 3: Transforms</h2>
+      We implement transformations (specifically, translation, rotation, and
+      scaling) using homogeneous coordinates matrices. Consider the default
+      robot position:
 
-		We implement transformations (specifically, translation, rotation, and scaling) using homogeneous coordinates matrices. 
+      <figure>
+        <img src="default_robot.png" alt="Lion" style="width: 50%" />
+        <figcaption>Default robot position.</figcaption>
+      </figure>
 
-		Consider the default robot position: 
+      Anirudh and I are staunch yoga enthusiasts, so we decided to make our
+      robot do the lotus pose (Padmasana). We apply a rotation to each leg of
+      the robot to achieve this pose.
+      <figure>
+        <img src="buddhist_pose.png" alt="Lion" style="width: 50%" />
+        <figcaption>Robot in lotus pose.</figcaption>
+      </figure>
 
-		<figure>
-			<img src="default_robot.png" alt="Lion" style="width:50%"/>
-			<figcaption>Default robot position.</figcaption>
-		</figure>
+      <h2>Task 4: Barycentric coordinates</h2>
+      Say you have some number of points (in our case 3 vertices A B C
+      representing a triangle). Barycentric coordinates are a way to represent
+      another point as a weighted sum of these points. For example, we can
+      represent some point P = w1 * A + w2 * B + w3 * C where w1+w2+w3 must sum
+      to 1. Barycentric coordinates are great for interpolating values (ex:
+      colors) in between the vertices. For example, if our query point P is very
+      close to an existing vertex, the corresponding weight for that vertex will
+      be very high.
 
-		Anirudh and I are staunch Buddhists, so we decided to make our robot do the lotus pose (Padmasana). We apply a rotation to each leg of the robot to achieve this pose.
-		<figure>
-			<img src="buddhist_pose.png" alt="Lion" style="width:50%"/>
-			<figcaption>Robot in lotus pose.</figcaption>
-		</figure>
+      <figure>
+        <img
+          src="task4/color_triangle.png"
+          alt="Color Triangle"
+          style="width: 50%"
+        />
+        <figcaption>
+          This image shows barycentric coordinates used to interpolate colors
+          for a color triangle. One vertex is red, one is green, and one is
+          blue. The sample rate is 1.
+        </figcaption>
+      </figure>
 
-		
+      <figure>
+        <img src="task4/color_wheel.png" alt="Color Wheel" style="width: 50%" />
+        <figcaption>
+          This image shows barycentric coordinates used to interpolate colors
+          for a color wheel.
+        </figcaption>
+      </figure>
 
-		<h2>Task 4: Barycentric coordinates</h2>
-		Say you have some number of points (in our case 3 vertices A B C representing a triangle). Barycentric coordinates are a way to represent another point as a weighted sum of these points. For example, we can represent some point p = w1 * A + w2 * B + w3 * B where w1+w2+w3 must sum to 1. 
-		
-		Barycentric coordinates are great for interpolating values (ex: colors) in between the vertices. For example, if our query point P is very close to an existing vertex, the corresponding weight for that vertex will be very high.
-		
-		<figure>
-			<img src="task4/color_wheel.png" alt="Color Wheel" style="width:50%"/>
-			<figcaption>This image shows barycentric coordinates used to interpolate colors for a color wheel.</figcaption>
-		</figure>
-	
+      <h2>Task 5: "Pixel sampling" for texture mapping</h2>
 
+      <h2>Task 6: "Level Sampling" with mipmaps for texture mapping</h2>
 
-		<h2>Task 5: "Pixel sampling" for texture mapping</h2>
-		
+      In the previous task, we only had one resolution of the texture. In a mip
+      map, we have multiple resolutions of the texture (specifically,
+      resolutions of powers of 2 factors smaller than the original texture).
 
-		<h2>Task 6: "Level Sampling" with mipmaps for texture mapping</h2>
-
-		In the previous task, we only had one resolution of the texture. In a mip map, we have multiple resolutions of the texture (specifically, resolutions of powers of 2 factors smaller than the original texture). 
-
-
-		<h2>(Optional) Task 7: Extra Credit - Draw Something Creative!</h2>
-
-		
-		</div>
-	</body>
+      <h2>(Optional) Task 7: Extra Credit - Draw Something Creative!</h2>
+    </div>
+  </body>
 </html>
