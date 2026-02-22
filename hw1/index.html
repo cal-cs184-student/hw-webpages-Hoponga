@@ -30,21 +30,24 @@
   </head>
   <body>
     <div class="container">
-      <h1>CS184/284A Spring 2025 Homework 1 Write-Up</h1>
-      <div style="text-align: center">Names:</div>
+      <h1>CS184/284A Spring 2026 Homework 1 Write-Up</h1>
+      <div style="text-align: center">
+        Names: Kailash Ranganathan, Anirudh Kotamraju
+      </div>
 
       <br />
 
-      Link to webpage: (TODO)
-      <a href="https://cs184.eecs.berkeley.edu/sp25"
-        >cs184.eecs.berkeley.edu/sp25</a
+      Link to webpage:
+      <a
+        href="https://cal-cs184-student.github.io/hw-webpages-Hoponga/hw1/index.html"
+        >https://cal-cs184-student.github.io/hw-webpages-Hoponga/hw1/index.html</a
       >
 
       <br />
 
-      Link to GitHub repository: (TODO)
-      <a href="https://cs184.eecs.berkeley.edu/sp25"
-        >cs184.eecs.berkeley.edu/sp25</a
+      Link to GitHub repository:
+      <a href="https://github.com/cal-cs184-student/hw1-rasterizer-pgang"
+        >https://github.com/cal-cs184-student/hw1-rasterizer-pgang</a
       >
 
       <figure>
@@ -190,13 +193,143 @@
 
       <h2>Task 5: "Pixel sampling" for texture mapping</h2>
 
+      The texture is stored as a mipmap, which has multiple resolutions of the
+      texture. For this task, we use just the full resolution texture (level 0).
+      We will refer to these texture grid elements as texels.
+
+      <br />
+
+      Our goal in this task is to do pixel sampling for texture mapping. This
+      means that for each pixel in the triangle, we need to find the texel
+      coordinates to sample from in the texture. Here's an algorithmic
+      description that goes more into detail:
+      <pre>
+		<code>
+			Take a triangle with vertices (x0, y0), (x1, y1), (x2, y2) whose
+			corresponding texel coordinates are (u0, v0), (u1, v1), (u2, v2).
+			
+
+			Figure out which pixels are covered by the triangle. 
+
+			for each covered_pixel:
+				Convert from pixel coordinates to barycentric coordinates. 
+				
+				Using the barycentric coordinates, interpolate which u and v 
+				to sample from in the texture.
+
+				Sample the texture from the interpolated texel coordinates, 
+				using either nearest neighbor or bilinear interpolation.
+		</code>
+		</pre>
+      <br />
+      Nearest neighbor sampling takes the query coordinate and rounds it to the
+      nearest texel coordinate. Bilinear sampling takes the query coordinate and
+      interpolates between the 4 nearest texel coordinates. Each texel
+      coordinate's value is weighted by how close the query coordinate is to
+      that texel coordinate.
+
+      <br />
+
+      The following images show a rasterized Earth map. In the top right is a
+      zoomed in part of the image.
+
+      <figure>
+        <img src="task5/nn_sample_rate_1.png" style="width: 50%" />
+        <figcaption>
+          This image shows nearest neighbor sampling (sample rate 1).
+        </figcaption>
+      </figure>
+      <figure>
+        <img src="task5/bilinear_sample_rate_1.png" style="width: 50%" />
+        <figcaption>
+          This image shows bilinear sampling (sample rate 1).
+        </figcaption>
+      </figure>
+      <figure>
+        <img src="task5/nn_sample_rate_16.png" style="width: 50%" />
+        <figcaption>
+          This image shows nearest neighbor sampling (sample rate 16).
+        </figcaption>
+      </figure>
+      <figure>
+        <img src="task5/bilinear_sample_rate_16.png" style="width: 50%" />
+        <figcaption>
+          This image shows bilinear sampling (sample rate 16).
+        </figcaption>
+      </figure>
+
+      The first image (nearest neighbor, sample_rate=1) has a lot of aliasing
+      with many gaps between pixels corresponding to the same edge.
+      <br />
+      <br />
+      The second image (bilinear, sample_rate=1) has similar incorrect gaps
+      between parts of the same edge, but the pixel values are more smoothed.
+      <br />
+      <br />
+      The third image (nearest neighbor, sample_rate=16) does not have gaps
+      within the same edges, but the pixel values are more high frequency.
+      <br />
+      <br />
+      The fourth image (bilinear, sample_rate=16) does not have gaps within the
+      same edges, and the pixel values are more smoothed. These results are as
+      expected.
+      <br />
+      <br />
+      Generally, bilinear sampling produces more smooth pixel values than
+      nearest neighbor sampling. Also, a higher sample rate generally produces
+      more correct values (here with fewer gaps) as we are sampling more points
+      to decide a single pixel's value.
+
       <h2>Task 6: "Level Sampling" with mipmaps for texture mapping</h2>
 
       In the previous task, we only had one resolution of the texture. In a mip
       map, we have multiple resolutions of the texture (specifically,
-      resolutions of powers of 2 factors smaller than the original texture). We want to sample resolutions depending on the Jacobian of each triangle which represents its depth distortion. Specifically, if we find that the triangle is very distorted, which we represent by the derivative of texel map coordinates with respect to screen coordinates, then a large area of texture maps to a small area of the screen and we can afford a lower resolution in this area. Whereas if we have a flatter triangle where this derivative is lesser, the map is more one to one and we require a higher resolution. This motivates the formulas for L and d in mipmap level sampling. 
+      resolutions of powers of 2 factors smaller than the original texture). We
+      want to sample resolutions depending on the Jacobian of each triangle
+      which represents its depth distortion. Specifically, if we find that the
+      triangle is very distorted, which we represent by the derivative of texel
+      map coordinates with respect to screen coordinates, then a large area of
+      texture maps to a small area of the screen and we can afford a lower
+      resolution in this area. Whereas if we have a flatter triangle where this
+      derivative is lesser, the map is more one to one and we require a higher
+      resolution. This motivates the formulas for L and d in mipmap level
+      sampling. We implement this procedure by approximating the du(dv)/dx(dy)
+      derivatives using finite differences, and then use the maximum of these
+      derivatives to determine the appropriate mipmap level. We could either
+      sampling levels by always sampling the highest resolution (which is
+      L_zero, memory efficient as we dont even need the mipmap), rounding the
+      above-decribed level to the nearest mipmap level (L_nearest, which is less
+      memory efficient as now it requires the mipmap and requires a bit more
+      computation for those derivatives), or doing linear interpolation
+      (L_LINEAR) which is similarly memory inefficient and also a bit more
+      computationally expensive as we have to sample two texel maps and
+      interpolate between them for one pixel. First we look at L_zero and
+      P_nearest
+      <figure>
+        <img
+          src="task6/levelzero_nearestpixel.png"
+          alt="L_zero P_nearest"
+          style="width: 50%"
+        />
+        <figcaption>
+          This image shows the L_zero and P_nearest sampling method for texture
+          mapping.
+        </figcaption>
+      </figure>
 
-	  We implement this procedure by approximating the du(dv)/dx(dy) derivatives using finite differences, and then use the maximum of these derivatives to determine the appropriate mipmap level. 
+      Then we look at L_zero and P_bilinear
+      <figure>
+        <img
+          src="task6/levelzero_bilinearpixel.png"
+          alt="L_zero P_bilinear"
+          style="width: 50%"
+        />
+        <figcaption>
+          This image shows the L_zero and P_bilinear sampling method for texture
+          mapping.
+        </figcaption>
+      </figure>
+
 
 	  We could either sampling levels by always sampling the highest resolution (which is L_zero, memory efficient as we dont even need the mipmap), rounding the above-decribed level to the nearest mipmap level (L_nearest, which is less memory efficient as now it requires the mipmap and requires a bit more computation for those derivatives), or doing linear interpolation (L_LINEAR) which is similarly memory inefficient and also a bit more computationally expensive as we have to sample two texel maps and interpolate between them for one pixel. 
 	  
@@ -254,6 +387,18 @@
 
 		Some trends we see are that using L_zero over L_nearest gives sharper images but also more aliasing, and using P_bilinear over P_nearest gives smoother images but also more blurring. We focus in on a specific part of our favorite Punch monkey image -- specifically the eyes! that demonstrate this. 
 
+      Then we look at L_nearest and P_nearest
+      <figure>
+        <img
+          src="task6/levelnearest_nearestpixel.png"
+          alt="L_nearest P_nearest"
+          style="width: 50%"
+        />
+        <figcaption>
+          This image shows the L_nearest and P_nearest sampling method for
+          texture mapping.
+        </figcaption>
+      </figure>
 
 
       <h2>(Optional) Task 7: Extra Credit - Draw Something Creative!</h2>
