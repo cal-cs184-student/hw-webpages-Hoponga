@@ -275,64 +275,67 @@
 
       In the previous task, we only had one resolution of the texture. In a mip
       map, we have multiple resolutions of the texture (specifically,
-      resolutions of powers of 2 factors smaller than the original texture). We
-      want to sample resolutions depending on the Jacobian of each triangle
-      which represents its depth distortion. Specifically, if we find that the
-      triangle is very distorted, which we represent by the derivative of texel
-      map coordinates with respect to screen coordinates, then a large area of
-      texture maps to a small area of the screen and we can afford a lower
-      resolution in this area. Whereas if we have a flatter triangle where this
-      derivative is lesser, the map is more one to one and we require a higher
-      resolution. This motivates the formulas for L and d in mipmap level
-      sampling. We implement this procedure by approximating the du(dv)/dx(dy)
-      derivatives using finite differences, and then use the maximum of these
-      derivatives to determine the appropriate mipmap level. We could either
-      sampling levels by always sampling the highest resolution (which is
-      L_zero, memory efficient as we dont even need the mipmap), rounding the
-      above-decribed level to the nearest mipmap level (L_nearest, which is less
-      memory efficient as now it requires the mipmap and requires a bit more
-      computation for those derivatives), or doing linear interpolation
-      (L_LINEAR) which is similarly memory inefficient and also a bit more
-      computationally expensive as we have to sample two texel maps and
-      interpolate between them for one pixel. First let us look at the results
-      of always sampling the highest resolution (L_zero):
+      resolutions of powers of 2 factors smaller than the original texture). We want to sample resolutions depending on the Jacobian of each triangle which represents its depth distortion. Specifically, if we find that the triangle is very distorted, which we represent by the derivative of texel map coordinates with respect to screen coordinates, then a large area of texture maps to a small area of the screen and we can afford a lower resolution in this area. Whereas if we have a flatter triangle where this derivative is lesser, the map is more one to one and we require a higher resolution. This motivates the formulas for L and d in mipmap level sampling. 
 
-      <figure>
-        <img src="task6/levelzero.png" alt="L_zero" style="width: 50%" />
-        <figcaption>
-          This image shows the result of always sampling the highest resolution
-          (L_zero). Notice the aliasing artifacts on the floor and ceiling.
-        </figcaption>
-      </figure>
+	  We implement this procedure by approximating the du(dv)/dx(dy) derivatives using finite differences, and then use the maximum of these derivatives to determine the appropriate mipmap level. 
 
-      Next, let us look at the results of rounding the above-described level to
-      the nearest mipmap level (L_nearest):
-      <figure>
-        <img src="task6/nearestlevel.png" alt="L_nearest" style="width: 50%" />
-      </figure>
+	  We could either sampling levels by always sampling the highest resolution (which is L_zero, memory efficient as we dont even need the mipmap), rounding the above-decribed level to the nearest mipmap level (L_nearest, which is less memory efficient as now it requires the mipmap and requires a bit more computation for those derivatives), or doing linear interpolation (L_LINEAR) which is similarly memory inefficient and also a bit more computationally expensive as we have to sample two texel maps and interpolate between them for one pixel. 
+	  
+	  First we look at L_zero and P_nearest
+	  <figure>
+		<img
+		  src="task6/levelzero_nearestpixel.png"
+		  alt="L_zero P_nearest"
+		  style="width: 50%"
+		/>
+		<figcaption>
+		  This image shows the L_zero and P_nearest sampling method for texture
+		  mapping.
+		</figcaption>
+		</figure> 
 
-      Finally, let us look at the results of doing linear interpolation
-      (L_LINEAR):
-      <figure>
-        <img
-          src="task6/levellinear_nearestpixel.png"
-          alt="L_LINEAR"
-          style="width: 50%"
-        />
-      </figure>
+		Then we look at L_zero and P_bilinear
+		<figure>
+		  <img
+			src="task6/levelzero_bilinearpixel.png"
+			alt="L_zero P_bilinear"
+			style="width: 50%"
+		  />
+		  <figcaption>
+			This image shows the L_zero and P_bilinear sampling method for texture
+			mapping.
+		  </figcaption>
+		</figure>
 
-      <figure>
-        <img
-          src="task6/levellinear_bilinear.png"
-          alt="L_LINEAR_bilinear"
-          style="width: 50%"
-        />
-        <figcaption>
-          This image shows the result of doing linear interpolation (L_LINEAR).
-          Notice the reduction in aliasing artifacts compared to L_zero and
-          L_nearest.
-        </figcaption>
-      </figure>
+		Then we look at L_nearest and P_nearest
+		<figure>
+		  <img
+			src="task6/levelnearest_nearestpixel.png"
+			alt="L_nearest P_nearest"
+			style="width: 50%"
+		  />
+		  <figcaption>
+			This image shows the L_nearest and P_nearest sampling method for texture
+			mapping.
+		  </figcaption>
+		</figure>	
+
+		ANd finally we look at L_nearest and P_bilinear
+		<figure>
+		  <img
+			src="task6/levelnearest_bilinearpixel.png"
+			alt="L_nearest P_bilinear"
+			style="width: 50%"
+		  />
+		  <figcaption>
+			This image shows the L_nearest and P_bilinear sampling method for texture
+			mapping.
+		  </figcaption>
+		</figure>
+
+		Some trends we see are that using L_zero over L_nearest gives sharper images but also more aliasing, and using P_bilinear over P_nearest gives smoother images but also more blurring. We focus in on a specific part of the globe texture that demonstrates these trends. 
+
+
 
       <h2>(Optional) Task 7: Extra Credit - Draw Something Creative!</h2>
     </div>
