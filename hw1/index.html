@@ -57,9 +57,9 @@
 		-->
 
       <h2>Overview</h2>
-      Give a high-level overview of what you implemented in this homework. Think
-      about what you've built as a whole. Share your thoughts on what
-      interesting things you've learned from completing the homework.
+      In this homework, we implement a rasterizer that can draw triangles, apply transformations to them, and perform texture mapping. We also implement supersampling for antialiasing and use barycentric coordinates for interpolation. The final result is a rasterizer that renders both scenes with smooth edges and textures, and we demonstrate the effects of our implementations with various images, from shapes built with purely colored rendered triangles to textured meshes. 
+
+	  We learned a lot about the rasterization pipeline and about multi-resolution texture mapping (ie. mipmaps) through this homework. 
 
       <h2>Task 1: Drawing Single-Color Triangles</h2>
 
@@ -131,6 +131,12 @@
         <img src="task2/zoomed_sample_rate_16.png" style="width: 100%" />
         <figcaption>Sample Rate 16 (zoomed on red triangle)</figcaption>
       </figure>
+
+	  To introduce supersampling into the rasterization pipeline, we require that for point and line pixels, we have them as "flat supersampling" where all the subpixels have the genuine color of the single pixel so it renders properly. 
+
+	  Previously, we would write colors to the sample-buffer in rasterize_triangle which would then be in bijection with colors in the frame-buffer. Now, that is not the case, and we have to adopt the logic of calculating averages across the sample-buffer to resolve to frame buffer. So rasterization only edits the sample buffer (meaning we iterate over all subpixels as points, rather than only just pixels) and we do the logic to calculate true pixel values in the resolve_to_framebuffer method. 
+
+
 
       <h2>Task 3: Transforms</h2>
 
@@ -246,7 +252,7 @@
 		  </figcaption>
 		</figure>
 
-		Some trends we see are that using L_zero over L_nearest gives sharper images but also more aliasing, and using P_bilinear over P_nearest gives smoother images but also more blurring. We focus in on a specific part of the globe texture that demonstrates these trends. 
+		Some trends we see are that using L_zero over L_nearest gives sharper images but also more aliasing, and using P_bilinear over P_nearest gives smoother images but also more blurring. We focus in on a specific part of our favorite Punch monkey image -- specifically the eyes! that demonstrate this. 
 
 
 
