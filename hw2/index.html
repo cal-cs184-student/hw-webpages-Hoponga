@@ -1,116 +1,480 @@
 <html>
-	<head>
-		<script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=default'></script>
-		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-		<style>
-			h1 {
-				text-align: center;
-			}
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=default"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      h1 {
+        text-align: center;
+      }
 
-			.container {
-				margin: 0 auto;
-				padding: 60px 20%;
-			}
+      .container {
+        margin: 0 auto;
+        padding: 60px 20%;
+      }
 
-			figure {
-				text-align: center;
-			}
+      figure {
+        text-align: center;
+      }
 
-			img {
-				display: inline-block;
-			}
+      img {
+        display: inline-block;
+      }
 
-			body {
-				font-family: 'Inter', sans-serif;
-			}
-		</style>
-	</head>
-	<body>
-		<div class="container">
-		<h1>CS184/284A Spring 2025 Homework 2 Write-Up</h1>
-		<div style="text-align: center;">Names: </div>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>CS184/284A Spring 2026 Homework 2 Write-Up</h1>
+      <div style="text-align: center">
+        Names: Anirudh Kotamraju, Kailash Ranganathan
+      </div>
 
-		<br>
+      <br />
 
-		Link to webpage: (TODO) <a href="https://cs184.eecs.berkeley.edu/sp25">cs184.eecs.berkeley.edu/sp25</a>
+      Link to webpage: TODO confirm deployed URL
+      <a href="https://cal-cs184-student.github.io/hw-webpages-Hoponga/hw2/"
+        >https://cal-cs184-student.github.io/hw-webpages-Hoponga/hw2/</a
+      >
 
-		<br>
-		
-		Link to GitHub repository: (TODO) <a href="https://cs184.eecs.berkeley.edu/sp25">cs184.eecs.berkeley.edu/sp25</a>
+      <br />
 
-		<figure>
-			<img src="teapot.png" alt="Teapot" style="width:50%"/>
-			<figcaption>You can add images with captions!</figcaption>
-		</figure>
+      Link to GitHub repository:
+      <a href="https://github.com/cal-cs184-student/hw2-meshedit-pgangs"
+        >https://github.com/cal-cs184-student/hw2-meshedit-pgangs</a
+      >
 
-		<!--
+      <figure>
+        <img src="teapot.png" alt="Teapot" style="width: 50%" />
+        <figcaption>
+          Reference render used throughout the assignment. Replace this with one
+          of your own favorite HW2 screenshots if you want a more personal cover
+          image.
+        </figcaption>
+      </figure>
+
+      <!--
 		We've already added one heading per part, to make your write-up as navigable when grading. Please fit your write-up within these sections!
 		-->
 
-		<h2>Overview</h2>
-		Give a high-level overview of what you implemented in this homework. Think about what you've built as a whole. Share your thoughts on what interesting things you've learned from completing the homework.
+      <h2>Overview</h2>
+      <p>
+        In this homework we implemented both parametric surface evaluation and
+        local triangle-mesh editing. In Section I, we used de Casteljau
+        subdivision to evaluate Bezier curves and Bezier patches from their
+        control points. In Section II, we worked directly with the half-edge
+        mesh data structure to compute area-weighted vertex normals, perform
+        local edge flips and splits, and then combine those operations into Loop
+        subdivision for mesh upsampling.
+      </p>
+      <p>
+        The main thing we learned from this homework is how much geometric
+        behavior depends on connectivity, not just vertex positions. The Bezier
+        parts show how repeated interpolation produces smooth geometry from a
+        small control set, while the half-edge parts show that even a very local
+        remeshing operation requires careful bookkeeping of every pointer. Loop
+        subdivision tied the two themes together: a smooth limit surface emerges
+        from repeated local rules applied on a discrete mesh.
+      </p>
 
-		<h2>Section I: Bezier Curves and Surfaces</h2>
+      <h2>Section I: Bezier Curves and Surfaces</h2>
 
-		<h3>Part 1: Bezier curves with 1D de Casteljau subdivision</h3>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+      <h3>Part 1: Bezier curves with 1D de Casteljau subdivision</h3>
+      <p>
+        de Casteljau's algorithm evaluates a Bezier curve by repeatedly linearly
+        interpolating between consecutive control points at a parameter \( t \in
+        [0, 1] \). Starting from the original control polygon, one round of
+        interpolation produces a new list with one fewer point; repeating that
+        process eventually leaves a single point on the curve. In our
+        implementation of <code>BezierCurve::evaluateStep(...)</code>, we
+        iterate through the input control points and compute each new point with
+        the formula \( (1 - t)p_i + tp_{i+1} \), storing the result in a new
+        <code>std::vector&lt;Vector2D&gt;</code>. Each call performs exactly one
+        subdivision level, which matches the GUI behavior when stepping through
+        the construction with <code>E</code>.
+      </p>
+      <p>
+        For the screenshots below we used a custom six-control-point curve.
+        Pressing <code>E</code> steps through each subdivision level, so the
+        images document the full progression from the original control polygon
+        to the final evaluated point. The final image in this section shows the
+        same curve after moving several control points and changing \( t \) with
+        the mouse wheel, which demonstrates how the intermediate construction
+        changes continuously with both the geometry and the evaluation
+        parameter.
+      </p>
 
-		<p>Here is an example 2x2 gridlike structure using an HTML table. Each <b>tr</b> is a row and each <b>td</b> is a column in that row. You might find this useful for framing and showing your result images in an organized fashion.</p>
-		<div style="display: flex; flex-direction: column; align-items: center;">
-			<table style="width: 100%; text-align: center; border-collapse: collapse;">
-			  <tr>
-				<td style="text-align: center;">
-				  <img src="teapot.png" width="400px"/>
-				  <figcaption>Caption goes here.</figcaption>
-				</td>
-				<td style="text-align: center;">
-				  <img src="teapot.png" width="400px"/>
-				  <figcaption>Caption goes here.</figcaption>
-				</td>
-			  </tr>
-			  <tr>
-				<td style="text-align: center;">
-				  <img src="teapot.png" width="400px"/>
-				  <figcaption>Caption goes here.</figcaption>
-				</td>
-				<td style="text-align: center;">
-				  <img src="teapot.png" width="400px"/>
-				  <figcaption>Caption goes here.</figcaption>
-				</td>
-			  </tr>
-			</table>
-		</div>
+      <p>
+        The table below records each stage of the de Casteljau construction for
+        our six-control-point test curve, from the original control polygon down
+        to the final evaluated point.
+      </p>
+      <div style="display: flex; flex-direction: column; align-items: center">
+        <table
+          style="width: 100%; text-align: center; border-collapse: collapse"
+        >
+          <tr>
+            <td style="text-align: center">
+              <img src="todo-placeholder.svg" width="400px" />
+              <figcaption>
+                TODO: Original six-point control polygon with the full Bezier
+                curve shown.
+              </figcaption>
+            </td>
+            <td style="text-align: center">
+              <img src="todo-placeholder.svg" width="400px" />
+              <figcaption>
+                TODO: First subdivision level after one call to
+                <code>evaluateStep(...)</code>.
+              </figcaption>
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align: center">
+              <img src="todo-placeholder.svg" width="400px" />
+              <figcaption>TODO: Second subdivision level.</figcaption>
+            </td>
+            <td style="text-align: center">
+              <img src="todo-placeholder.svg" width="400px" />
+              <figcaption>TODO: Third subdivision level.</figcaption>
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align: center">
+              <img src="todo-placeholder.svg" width="400px" />
+              <figcaption>TODO: Fourth subdivision level.</figcaption>
+            </td>
+            <td style="text-align: center">
+              <img src="todo-placeholder.svg" width="400px" />
+              <figcaption>
+                TODO: Final evaluated point after the last subdivision step.
+              </figcaption>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <figure>
+        <img
+          src="todo-placeholder.svg"
+          alt="Part 1 edited curve placeholder"
+          style="width: 70%"
+        />
+        <figcaption>
+          TODO: Slightly modified version of the same curve after dragging
+          control points and changing \( t \) with mouse scrolling.
+        </figcaption>
+      </figure>
 
-		<h3>Part 2: Bezier surfaces with separable 1D de Casteljau</h3>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+      <h3>Part 2: Bezier surfaces with separable 1D de Casteljau</h3>
+      <p>
+        To evaluate a Bezier surface, we extended the 1D de Casteljau routine in
+        a separable way. First, for each row of 3D control points, we evaluated
+        a 1D Bezier curve at parameter \( u \), producing one intermediate point
+        per row. Those intermediate points form another control polygon, and we
+        then evaluated that second 1D Bezier curve at parameter \( v \). In
+        code, <code>BezierPatch::evaluateStep(...)</code> performs one
+        interpolation round on a vector of <code>Vector3D</code>s,
+        <code>evaluate1D(...)</code> repeatedly applies that step until only one
+        point remains, and <code>evaluate(...)</code> uses
+        <code>evaluate1D(...)</code> first across rows and then across the
+        resulting column of points. In other words, the surface code reuses the
+        same 1D de Casteljau logic twice instead of requiring a separate 2D
+        interpolation routine.
+      </p>
+      <p>
+        This decomposition mirrors the math in lecture: the surface is evaluated
+        by nesting two 1D de Casteljau evaluations. The benefit is that the 2D
+        surface code stays compact because it reuses the exact same
+        interpolation logic as the curve case.
+      </p>
+      <figure>
+        <img
+          src="todo-placeholder.svg"
+          alt="Part 2 teapot placeholder"
+          style="width: 70%"
+        />
+        <figcaption>
+          TODO: Screenshot of <code>bez/teapot.bez</code> rendered by the Bezier
+          surface evaluator.
+        </figcaption>
+      </figure>
 
-		<h2>Section II: Triangle Meshes and Half-Edge Data Structure</h2>
+      <h2>Section II: Triangle Meshes and Half-Edge Data Structure</h2>
 
-		<h3>Part 3: Area-weighted vertex normals</h3>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+      <h3>Part 3: Area-weighted vertex normals</h3>
+      <p>
+        For <code>Vertex::normal()</code>, we traversed all faces incident to
+        the current vertex using the half-edge pattern
+        <code>h = h-&gt;twin()-&gt;next()</code>. For each neighboring triangle,
+        we recovered its three vertex positions, formed two edge vectors, and
+        took their cross product to obtain a face normal scaled by twice the
+        triangle area. Summing these cross products over the one-ring therefore
+        gives an area-weighted normal automatically. We then normalized the
+        accumulated vector once at the end to produce the final unit normal.
+      </p>
+      <p>
+        The most important implementation detail was keeping the orientation
+        consistent. If the cross product order is reversed, the normals point
+        inward and the mesh becomes unnaturally dark under shading. Using a
+        const half-edge iterator throughout this function also ensured that
+        normal evaluation did not accidentally mutate the mesh.
+      </p>
+      <div style="display: flex; flex-direction: column; align-items: center">
+        <table
+          style="width: 100%; text-align: center; border-collapse: collapse"
+        >
+          <tr>
+            <td style="text-align: center">
+              <img src="todo-placeholder.svg" width="400px" />
+              <figcaption>
+                TODO: <code>dae/teapot.dae</code> with default flat shading.
+              </figcaption>
+            </td>
+            <td style="text-align: center">
+              <img src="todo-placeholder.svg" width="400px" />
+              <figcaption>
+                TODO: <code>dae/teapot.dae</code> after pressing
+                <code>Q</code> to enable area-weighted vertex normals.
+              </figcaption>
+            </td>
+          </tr>
+        </table>
+      </div>
 
-		<h3>Part 4: Edge flip</h3>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+      <h3>Part 4: Edge flip</h3>
+      <p>
+        We implemented <code>HalfedgeMesh::flipEdge(...)</code> by first
+        collecting the two triangles adjacent to the selected edge and naming
+        all six half-edges, four vertices, five edges, and two faces involved in
+        the local neighborhood. If either adjacent face is a boundary face, the
+        function returns immediately because boundary edges should not be
+        flipped. Otherwise, we reassigned the half-edge connectivity so that the
+        old edge between \( b \) and \( c \) becomes the new edge between \( a
+        \) and \( d \), while keeping the same mesh elements and only rewiring
+        their pointers. Because only a fixed local neighborhood is touched, the
+        flip runs in constant time.
+      </p>
+      <p>
+        The most useful debugging trick here was to draw the local
+        before-and-after configuration on paper and then explicitly reset every
+        pointer, including pointers that did not seem to change. That approach
+        is a little verbose, but it dramatically reduced pointer bugs. We also
+        found it helpful to flip the same edge multiple times in a row and
+        verify that the mesh stayed manifold and visually consistent, since a
+        flip that works once can still leave stale pointers behind.
+      </p>
+      <div style="display: flex; flex-direction: column; align-items: center">
+        <table
+          style="width: 100%; text-align: center; border-collapse: collapse"
+        >
+          <tr>
+            <td style="text-align: center">
+              <img src="todo-placeholder.svg" width="400px" />
+              <figcaption>TODO: Teapot before edge flips.</figcaption>
+            </td>
+            <td style="text-align: center">
+              <img src="todo-placeholder.svg" width="400px" />
+              <figcaption>TODO: Teapot after several edge flips.</figcaption>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <p>
+        The main debugging issue in this part was making sure every vertex,
+        edge, face, and half-edge still pointed into a valid local configuration
+        after the flip. When one pointer was wrong, the GUI would often still
+        render something close to correct until we tried another nearby
+        operation, so repeated local stress-testing was much more informative
+        than a single successful flip.
+      </p>
 
-		<h3>Part 5: Edge split</h3>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+      <h3>Part 5: Edge split</h3>
+      <p>
+        We implemented <code>HalfedgeMesh::splitEdge(...)</code> on interior
+        edges by creating the new midpoint vertex, the required new half-edges,
+        edges, and faces, and then reconnecting the local neighborhood into four
+        triangles. The new vertex position is initialized to the midpoint of the
+        original edge, and boundary edges are ignored in this implementation. As
+        with edge flip, we treated the split as a purely local rewrite: we first
+        named the original neighborhood, then created the new elements, and
+        finally assigned every pointer in the final configuration. This also
+        keeps the operation local and constant-time.
+      </p>
+      <p>
+        The trickiest part of edge split was keeping track of which half-edges
+        should point to the old vertices versus the new midpoint vertex after
+        the topology changes. The safest workflow was to label everything in a
+        sketch, write down the final connectivity, and then translate that
+        diagram directly into pointer assignments. After splitting, we tested
+        the result by mixing splits and flips in both nearby and distant regions
+        of the mesh, which is a good way to expose hidden connectivity errors.
+      </p>
+      <div style="display: flex; flex-direction: column; align-items: center">
+        <table
+          style="width: 100%; text-align: center; border-collapse: collapse"
+        >
+          <tr>
+            <td style="text-align: center">
+              <img src="todo-placeholder.svg" width="400px" />
+              <figcaption>TODO: Mesh before edge splits.</figcaption>
+            </td>
+            <td style="text-align: center">
+              <img src="todo-placeholder.svg" width="400px" />
+              <figcaption>
+                TODO: Same mesh after several edge splits.
+              </figcaption>
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align: center">
+              <img src="todo-placeholder.svg" width="400px" />
+              <figcaption>
+                TODO: Mesh before a combined split-and-flip sequence.
+              </figcaption>
+            </td>
+            <td style="text-align: center">
+              <img src="todo-placeholder.svg" width="400px" />
+              <figcaption>
+                TODO: Mesh after a combination of edge splits and edge flips.
+              </figcaption>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <p>
+        The hardest bug pattern here was that a split could appear correct
+        immediately after execution but still leave one stale pointer that
+        caused a later traversal failure. Verifying the local one-ring carefully
+        and then trying more edits around the modified area was the most
+        reliable way to catch those issues. We did not implement the optional
+        boundary-edge split extension for this submission.
+      </p>
 
-		<h3>Part 6: Loop subdivision for mesh upsampling</h3>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+      <h3>Part 6: Loop subdivision for mesh upsampling</h3>
+      <p>
+        We implemented Loop subdivision in the recommended three-phase order.
+        First, we traversed the original mesh and computed the updated positions
+        for all old vertices, storing them in <code>Vertex::newPosition</code>.
+        For an old vertex of degree \( n \), we used \[ (1 - nu)\mathbf{v} + u
+        \sum \mathbf{v}_i, \] where \( u = \frac{3}{16} \) when \( n = 3 \) and
+        \( u = \frac{3}{8n} \) otherwise. During the same pass, we computed each
+        original edge midpoint position and stored it in
+        <code>Edge::newPosition</code> using \[ \frac{3}{8}(A + B) +
+        \frac{1}{8}(C + D). \] Second, we split every original edge exactly
+        once, marked newly created elements with the provided
+        <code>isNew</code> flags, and then flipped each new edge that connects
+        one old vertex and one new vertex. Third, after the connectivity had
+        been updated to the 4-1 subdivided mesh, we copied each stored
+        <code>newPosition</code> back into <code>Vertex::position</code>.
+      </p>
+      <p>
+        The key implementation idea was to compute all weighted positions before
+        changing any connectivity. This matters because the Loop rules are
+        defined on the original mesh, and once the mesh has been subdivided it
+        becomes much harder to distinguish old vertices from newly inserted ones
+        and to recover the original one-ring neighborhoods. We also used the
+        provided <code>isNew</code> flags to distinguish original versus
+        inserted elements, then flipped only new edges that connect one old
+        vertex and one new vertex. The other subtle point was iterating over the
+        original edges safely: because edge splitting mutates the mesh, we saved
+        the next edge iterator before calling <code>splitEdge(...)</code>.
+      </p>
+      <p>
+        After repeated Loop subdivision, sharp corners and creases become
+        progressively rounded because each update replaces vertex positions by
+        weighted averages of nearby geometry. Pre-splitting around a sharp
+        feature can reduce how quickly that feature disappears, since extra
+        control vertices give the local neighborhood more freedom to follow the
+        intended shape. On <code>dae/cube.dae</code>, the default triangulation
+        introduces directional bias because the diagonals on each face are not
+        arranged symmetrically. Repeated subdivision preserves and amplifies
+        that bias, which makes the cube drift toward an asymmetric rounded
+        shape. Preprocessing the cube with a symmetric pattern of flips, and if
+        needed additional balanced splits, makes the connectivity more uniform
+        across faces and produces much more symmetric subdivision results.
+      </p>
+      <div style="display: flex; flex-direction: column; align-items: center">
+        <table
+          style="width: 100%; text-align: center; border-collapse: collapse"
+        >
+          <tr>
+            <td style="text-align: center">
+              <img src="todo-placeholder.svg" width="400px" />
+              <figcaption>TODO: Mesh before Loop subdivision.</figcaption>
+            </td>
+            <td style="text-align: center">
+              <img src="todo-placeholder.svg" width="400px" />
+              <figcaption>
+                TODO: Same mesh after one subdivision step.
+              </figcaption>
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align: center">
+              <img src="todo-placeholder.svg" width="400px" />
+              <figcaption>
+                TODO: Cube after several subdivisions showing asymmetry from the
+                default triangulation.
+              </figcaption>
+            </td>
+            <td style="text-align: center">
+              <img src="todo-placeholder.svg" width="400px" />
+              <figcaption>
+                TODO: Preprocessed cube with more symmetric connectivity before
+                subdivision.
+              </figcaption>
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align: center">
+              <img src="todo-placeholder.svg" width="400px" />
+              <figcaption>
+                TODO: Preprocessed cube after repeated subdivision, showing
+                improved symmetry.
+              </figcaption>
+            </td>
+            <td style="text-align: center">
+              <img src="todo-placeholder.svg" width="400px" />
+              <figcaption>
+                TODO: Optional close-up illustrating how pre-splitting preserves
+                a sharper feature.
+              </figcaption>
+            </td>
+          </tr>
+        </table>
+      </div>
 
-		<h2>(Optional) Section III: Potential Extra Credit - Art Competition: Model something Creative</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+      <h2>
+        (Optional) Section III: Potential Extra Credit - Art Competition: Model
+        something Creative
+      </h2>
+      <p>
+        We did not complete the optional art competition section for this
+        submission. If we add it later, we will include the original control
+        mesh, one- and two-step subdivision results, and a short explanation of
+        the modeling choices.
+      </p>
 
-		<h2>Additional Notes (please remove)</h2>
-		<ul>
-			<li>You can also add code if you'd like as so: <code>code code code</code></li>
-			<li>If you'd like to add math equations, 
-				<ul>
-					<li>You can write inline equations like so: \( a^2 + b^2 = c^2 \)</li>
-					<li>You can write display equations like so: \[ a^2 + b^2 = c^2 \]</li>
-				</ul>
-			</li>
-		</ul>
-		</div>
-	</body>
+      <h2>Additional Notes</h2>
+      <ul>
+        <li>
+          Replace every <code>TODO</code> image placeholder with your actual
+          screenshots before exporting the final PDF.
+        </li>
+        <li>
+          Update the name line and deployed webpage URL once you know the final
+          values.
+        </li>
+        <li>
+          If your implementation differs from the explanations above, adjust the
+          wording so the write-up matches your code exactly.
+        </li>
+      </ul>
+    </div>
+  </body>
 </html>

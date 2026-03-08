@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" role="img" aria-labelledby="title desc">
+  <title id="title">TODO placeholder image</title>
+  <desc id="desc">Placeholder image indicating that a screenshot still needs to be added.</desc>
+  <rect width="1200" height="750" fill="#f5f1e8"/>
+  <rect x="36" y="36" width="1128" height="678" rx="24" ry="24" fill="#fffaf2" stroke="#2b2b2b" stroke-width="6"/>
+  <line x1="72" y1="72" x2="1128" y2="678" stroke="#c7b9a1" stroke-width="10"/>
+  <line x1="1128" y1="72" x2="72" y2="678" stroke="#c7b9a1" stroke-width="10"/>
+  <text x="600" y="320" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="74" font-weight="700" fill="#2b2b2b">TODO IMAGE</text>
+  <text x="600" y="405" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="34" fill="#4d4d4d">Replace this placeholder with the requested screenshot.</text>
+  <text x="600" y="460" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="28" fill="#6b6b6b">Keep the relative path in this HTML page.</text>
+</svg>
