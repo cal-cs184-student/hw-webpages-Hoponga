@@ -394,6 +394,12 @@
         needed additional balanced splits, makes the connectivity more uniform
         across faces and produces much more symmetric subdivision results.
       </p>
+      <p>
+        The teapot sequence below illustrates the general smoothing effect:
+        prominent corners and edges become rounder with each subdivision step.
+        Pre-splitting edges near a feature helps preserve that feature longer by
+        adding more local control before subdivision.
+      </p>
       <div style="display: flex; flex-direction: column; align-items: center">
         <table
           style="width: 100%; text-align: center; border-collapse: collapse"
@@ -413,10 +419,6 @@
               <img src="s5_semienhancedteapot.png" width="400px" />
               <figcaption>Teapot Mesh after more subdivision steps</figcaption>
             </td>
-            <td style="text-align: center">
-              <img src="s5_finalenhancedteapot.png" width="400px" />
-              <figcaption>Teapot mesh after a BUNNNNNCH of subdivision steps</figcaption>
-            </td>
           </tr>
           <tr>
             <td style="text-align: center">
@@ -430,7 +432,8 @@
               <img src="s5_prepreocessedcube.png" width="400px" />
               <figcaption>
                 Preprocessed cube with more symmetric connectivity before
-                subdivision (just added a single split to the existing diagonal edge)
+                subdivision (just added a single split to the existing diagonal
+                edge)
               </figcaption>
             </td>
           </tr>
@@ -442,11 +445,9 @@
                 symmetry.
               </figcaption>
             </td>
+
             <td style="text-align: center">
-              <img
-                src="s5_preprocessedcubesubdivisionsuper.png"
-                width="400px"
-              />
+              <img src="task6/closeupsharp.png" width="400px" />
               <figcaption>
                 Close-up illustrating how pre-splitting preserves a sharper
                 feature.
