@@ -100,51 +100,58 @@
 			For spheres, we substituted the ray equation into the sphere equation \(|\mathbf{r}(t) - \mathbf{c}|^2 = R^2\) and solved the resulting quadratic. If the discriminant is negative there's no intersection; otherwise we take the smaller root that still falls within <code>[min_t, max_t]</code>. The surface normal at the hit point is just the normalized vector from the sphere center to that point.
 		</p>
 
-		<h3>Sample Render Results</h3>
-		<p>Below are a few scenes rendered after completing Parts 1–4:</p>
-		<div style="display: flex; flex-direction: column; align-items: center;">
-			<table style="width: 100%; text-align: center; border-collapse: collapse;">
-			  <tr>
-				<td style="text-align: center;">
-				  <img src="images/CBempty.png" width="400px"/>
-				  <figcaption>CBempty.dae — simple Cornell box test</figcaption>
-				</td>
-				<td style="text-align: center;">
-				  <img src="images/CBspheres.png" width="400px"/>
-				  <figcaption>CBspheres.dae — spheres and diffuse walls</figcaption>
-				</td>
-			  </tr>
-			  <tr>
-				<td style="text-align: center;">
-				  <img src="images/cow.png" width="400px"/>
-				  <figcaption>cow.dae — mesh intersection sanity check</figcaption>
-				</td>
-				<td style="text-align: center;">
-				  <img src="images/bunny.png" width="400px"/>
-				  <figcaption>bunny.dae — complex geometry render</figcaption>
-				</td>
-			  </tr>
-			</table>
-		</div>
-		
-		<h2>Part 2: Bounding Volume Hierarchy</h2>
-		<p>
-			To accelerate intersection tests, we built a BVH over all primitives. Each node stores a bounding box and a range of primitives; we split by the longest axis of the centroid bounds and partition at the median, recursing until a small leaf threshold is reached. During traversal, rays are first tested against the bounding box, and only if that passes do we test primitives inside. This prunes huge parts of the scene and makes complex meshes feasible to render, especially for high sample counts.
-		</p>
-		<div style="display: flex; flex-direction: column; align-items: center;">
-			<table style="width: 100%; text-align: center; border-collapse: collapse;">
-			  <tr>
-				<td style="text-align: center;">
-				  <img src="images/cow.png" width="400px"/>
-				  <figcaption>cow.dae — BVH makes dense meshes tractable</figcaption>
-				</td>
-				<td style="text-align: center;">
-				  <img src="images/bunny.png" width="400px"/>
-				  <figcaption>bunny.dae — BVH-accelerated render</figcaption>
-				</td>
-			  </tr>
-			</table>
-		</div>
+			<h3>Sample Render Results</h3>
+			<p>
+				Below are three normal-shaded renders produced directly by the path tracer with the <code>-f</code> flag. These were rendered in a normal-visualization mode so the color at each hit point is the interpolated surface normal mapped from <code>[-1, 1]</code> to <code>[0, 1]</code>, which makes it easy to verify that camera rays and primitive intersections are both working correctly.
+			</p>
+			<div style="display: flex; flex-direction: column; align-items: center;">
+				<table style="width: 100%; text-align: center; border-collapse: collapse;">
+				  <tr>
+					<td style="text-align: center;">
+					  <img src="images/part1_cbempty_normal.png" width="400px"/>
+					  <figcaption>CBempty.dae — walls and light box rendered with normal shading</figcaption>
+					</td>
+					<td style="text-align: center;">
+					  <img src="images/part1_cbspheres_normal.png" width="400px"/>
+					  <figcaption>CBspheres_lambertian.dae — sphere and wall normals</figcaption>
+					</td>
+				  </tr>
+				  <tr>
+					<td colspan="2" style="text-align: center;">
+					  <img src="images/part1_banana_normal.png" width="400px"/>
+					  <figcaption>banana.dae — triangle mesh normal shading sanity check</figcaption>
+					</td>
+				  </tr>
+				</table>
+			</div>
+			
+			<h2>Part 2: Bounding Volume Hierarchy</h2>
+			<p>
+				To accelerate intersection tests, we built a BVH recursively over the scene primitives. For each node we first compute the bounding box of the primitive range. If the range is small enough, we stop and make a leaf by storing the iterators for that contiguous block of primitives. Otherwise, we compute the bounding box of primitive centroids, choose the axis with the largest extent, and split the range at the median centroid along that axis using <code>nth_element</code>. That gives a reasonably balanced tree while keeping the implementation simple. During traversal, we first intersect the ray with the node bounding box; only if that test passes do we recurse into the children or test primitives in a leaf. In practice this cuts the number of primitive intersection tests per ray from “all triangles in the scene” down to a small number of leaf-local tests.
+			</p>
+			<div style="display: flex; flex-direction: column; align-items: center;">
+				<table style="width: 100%; text-align: center; border-collapse: collapse;">
+				  <tr>
+					<td style="text-align: center;">
+					  <img src="images/part2_cow_normal.png" width="400px"/>
+					  <figcaption>cow.dae — normal shading with BVH acceleration</figcaption>
+					</td>
+					<td style="text-align: center;">
+					  <img src="images/part2_bunny_normal.png" width="400px"/>
+					  <figcaption>bunny.dae — large triangle mesh rendered with BVH</figcaption>
+					</td>
+				  </tr>
+				  <tr>
+					<td colspan="2" style="text-align: center;">
+					  <img src="images/part2_maxplanck_normal.png" width="400px"/>
+					  <figcaption>maxplanck.dae — 50,801-triangle model rendered with BVH</figcaption>
+					</td>
+				  </tr>
+				</table>
+			</div>
+			<p>
+				We compared rendering times with and without BVH acceleration using the same settings for each scene: <code>160x120</code> resolution, <code>1</code> sample per pixel, <code>1</code> thread, and normal shading only. On our machine, <code>cow.dae</code> went from <code>0.3868s</code> without BVH to <code>0.0145s</code> with BVH, <code>bunny.dae</code> went from <code>2.6097s</code> to <code>0.0262s</code>, and <code>maxplanck.dae</code> went from <code>5.0046s</code> to <code>0.0176s</code>. That is about a <code>26.7x</code>, <code>99.6x</code>, and <code>284.4x</code> speedup respectively. The primitive-test counts tell the same story: without BVH each ray effectively tested every primitive in the scene, while with BVH the average dropped to about <code>18.4</code> tests per ray for cow, <code>28.1</code> for bunny, and <code>14.8</code> for maxplanck. As scene complexity increases, the gap widens sharply, which is exactly what we expect from replacing near-linear traversal with hierarchical culling.
+			</p>
 
 		<h2>Part 3: Direct Illumination</h2>
 		<p>
