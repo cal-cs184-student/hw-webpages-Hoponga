@@ -27,13 +27,13 @@
 	</head>
 	<body>
 		<div class="container">
-		<h1>CS184/284A Spring 2025 Homework 3 Write-Up</h1>
+		<h1>CS184/284A Spring 2026 Homework 3 Write-Up</h1>
 		<div style="text-align: center;">Names: </div>
 
 		<br>
 
-		Link to webpage: (TODO) <a href="https://cs184.eecs.berkeley.edu/sp25">cs184.eecs.berkeley.edu/sp25</a>
-		Link to GitHub repository: (TODO) <a href="https://cs184.eecs.berkeley.edu/sp25">cs184.eecs.berkeley.edu/sp25</a>
+		Link to webpage: <a href="https://cal-cs184-student.github.io/hw-webpages-Hoponga/hw3/">cal-cs184-student.github.io/hw-webpages-Hoponga/hw3/</a>
+		Link to GitHub repository: <a href="https://github.com/cal-cs184-student/hw3-pathtracer-superpgangs">github.com/cal-cs184-student/hw3-pathtracer-superpgangs</a>
 		
 		<figure>
 			<img src="cornell.png" alt="Cornell Boxes with Bunnies" style="width:70%"/>
@@ -155,74 +155,211 @@
 
 		<h2>Part 3: Direct Illumination</h2>
 		<p>
-			We implemented direct lighting using two strategies: uniform hemisphere sampling and importance sampling over lights. For each shading point, we sample an incoming direction, cast a shadow ray to check visibility, and accumulate the BSDF-weighted contribution divided by the PDF. Importance sampling targets the actual light sources, which dramatically reduces variance and noise for the same number of samples.
+			We first implemented the diffuse BSDF itself in <code>DiffuseBSDF::f</code> as the Lambertian term <code>reflectance / PI</code>, and zero-bounce lighting in <code>zero_bounce_radiance</code> by returning the intersected surface emission. From there, we added two versions of direct-light estimation. In <code>estimate_direct_lighting_hemisphere</code>, we build a local frame at the hit point, draw uniform hemisphere directions in object space, transform each one into world space, cast a shadow ray with <code>min_t = EPS_F</code>, and only keep samples whose shadow ray lands on an emissive surface. Each contribution is accumulated as <code>f(wo, wi) * Le * cos(theta) / pdf</code>, then averaged over all samples. In <code>estimate_direct_lighting_importance</code>, instead of guessing directions blindly, we iterate over the scene lights, call <code>sample_L</code> on each one, reject directions behind the surface, and cast a bounded shadow ray with <code>max_t = distToLight - EPS_F</code> to test visibility. Delta lights are sampled once while area lights use <code>ns_area_light</code> samples, and the visible contributions are averaged per light. The wrapper <code>one_bounce_radiance</code> selects between the two methods based on <code>direct_hemisphere_sample</code>.
+		</p>
+		<p>
+			All of the screenshots below were rendered with the <code>-f</code> flag rather than captured with an OS screenshot. For the comparison grids we used <code>CBbunny.dae</code>, since its area light produces a clear soft-shadow penumbra and makes the variance difference easy to see.
 		</p>
 		<div style="display: flex; flex-direction: column; align-items: center;">
 			<table style="width: 100%; text-align: center; border-collapse: collapse;">
 			  <tr>
 				<td style="text-align: center;">
-				  <img src="images/CBbunny_H_64_32.png" width="400px"/>
-				  <figcaption>CBbunny.dae — hemisphere sampling (64 samples)</figcaption>
+				  <img src="images/part3_cbbunny_hemisphere_l64_s1_m1.png" width="400px"/>
+				  <figcaption><code>CBbunny.dae</code> with uniform hemisphere sampling, <code>-s 1 -l 64 -m 1 -H</code></figcaption>
 				</td>
 				<td style="text-align: center;">
-				  <img src="images/CBbunny_16_8.png" width="400px"/>
-				  <figcaption>CBbunny.dae — importance sampling (16 light samples)</figcaption>
+				  <img src="images/part3_cbbunny_importance_l64_s1_m1.png" width="400px"/>
+				  <figcaption><code>CBbunny.dae</code> with light importance sampling, <code>-s 1 -l 64 -m 1</code></figcaption>
 				</td>
 			  </tr>
 			</table>
 		</div>
+		<p>
+			To compare noise under light sampling alone, we rendered the same view with <code>1</code> sample per pixel and varying numbers of light rays.
+		</p>
+		<div style="display: flex; flex-direction: column; align-items: center;">
+			<table style="width: 100%; text-align: center; border-collapse: collapse;">
+			  <tr>
+				<td style="text-align: center;">
+				  <img src="images/part3_cbbunny_importance_l1_s1_m1.png" width="180px"/>
+				  <figcaption><code>-l 1</code></figcaption>
+				</td>
+				<td style="text-align: center;">
+				  <img src="images/part3_cbbunny_importance_l4_s1_m1.png" width="180px"/>
+				  <figcaption><code>-l 4</code></figcaption>
+				</td>
+				<td style="text-align: center;">
+				  <img src="images/part3_cbbunny_importance_l16_s1_m1.png" width="180px"/>
+				  <figcaption><code>-l 16</code></figcaption>
+				</td>
+				<td style="text-align: center;">
+				  <img src="images/part3_cbbunny_importance_l64_s1_m1.png" width="180px"/>
+				  <figcaption><code>-l 64</code></figcaption>
+				</td>
+			  </tr>
+			</table>
+		</div>
+		<p>
+			The importance-sampled images converge much faster than the hemisphere-sampled image because almost every sample is aimed directly at a light source instead of wasting probability mass on dark directions. With <code>-s 1</code> and <code>-l 1</code>, the shadow under the bunny is extremely speckled and the ceiling/floor carry noticeable Monte Carlo noise. Increasing to <code>-l 4</code> already stabilizes the penumbra, <code>-l 16</code> makes the shadow edge much smoother, and <code>-l 64</code> is close to clean at this resolution. In contrast, hemisphere sampling at the same nominal sample count is still visibly noisier, especially in the soft shadow and across the back wall, because the estimator only rarely lands on the area light.
+		</p>
 
 		<h2>Part 4: Global Illumination</h2>
 		<p>
-			Global illumination combines direct lighting with indirect light from multiple bounces. We compute the one-bounce term explicitly and then recursively sample the BSDF to estimate the indirect term, using Russian roulette after a few bounces to keep the estimator unbiased while bounding runtime. The result captures soft interreflection, color bleeding, and brighter shadowed regions compared to direct-only lighting.
+			For indirect lighting, we implemented <code>DiffuseBSDF::sample_f</code> using the cosine-weighted hemisphere sampler already stored in the BSDF. It writes the sampled incoming direction <code>wi</code>, stores the corresponding PDF, and returns the same Lambertian value as <code>f</code>. The main recursive work happens in <code>at_least_one_bounce_radiance</code>: we construct the local frame at the current hit point, compute the explicit direct term with <code>one_bounce_radiance</code>, sample one new direction from the BSDF, transform that direction back to world space, and trace a new ray with <code>min_t = EPS_F</code> and depth decremented by one. If the new ray hits another surface, we recurse and multiply the returned radiance by <code>f * cos(theta) / pdf</code>. Camera rays are initialized with <code>depth = max_ray_depth</code> in <code>raytrace_pixel</code>, so the depth field becomes the recursion budget.
+		</p>
+		<p>
+			We then added Russian roulette in the recursive integrator. We always allow the first indirect bounce when <code>max_ray_depth &gt; 1</code>, and on later recursive calls we continue with probability <code>0.65</code>. Surviving paths divide by that continuation probability so the estimator stays unbiased in expectation. We also fixed the unaccumulated-bounce path used for the rubric visualizations: when <code>isAccumBounces=false</code>, <code>est_radiance_global_illumination</code> now returns only the requested <code>m</code>th-bounce contribution instead of incorrectly adding zero-bounce emission on top.
 		</p>
 		<div style="display: flex; flex-direction: column; align-items: center;">
 			<table style="width: 100%; text-align: center; border-collapse: collapse;">
 			  <tr>
 				<td style="text-align: center;">
-				  <img src="images/spheres.png" width="400px"/>
-				  <figcaption>CBspheres.dae — multi-bounce indirect light</figcaption>
+				  <img src="images/part4_cbspheres_gi_s1024_l16_m5.png" width="400px"/>
+				  <figcaption><code>CBspheres_lambertian.dae</code> with global illumination, <code>-s 1024 -l 16 -m 5</code></figcaption>
 				</td>
 				<td style="text-align: center;">
-				  <img src="images/bunny.png" width="400px"/>
-				  <figcaption>CBbunny.dae — indirect bounce adds soft fill light</figcaption>
+				  <img src="images/part4_cbbunny_gi_s1024_l16_m5.png" width="400px"/>
+				  <figcaption><code>CBbunny.dae</code> with global illumination, <code>-s 1024 -l 16 -m 5</code></figcaption>
 				</td>
 			  </tr>
 			</table>
 		</div>
+		<p>
+			The next pair isolates direct and indirect illumination from the same <code>CBbunny</code> view.
+		</p>
+		<div style="display: flex; flex-direction: column; align-items: center;">
+			<table style="width: 100%; text-align: center; border-collapse: collapse;">
+			  <tr>
+				<td style="text-align: center;">
+				  <img src="images/part4_cbbunny_direct_only_s1024_l16_m5.png" width="400px"/>
+				  <figcaption>Direct only, rendered with <code>-D -s 1024 -l 16 -m 5</code></figcaption>
+				</td>
+				<td style="text-align: center;">
+				  <img src="images/part4_cbbunny_indirect_only_s1024_l16_m5.png" width="400px"/>
+				  <figcaption>Indirect only, rendered with <code>-I -s 1024 -l 16 -m 5</code></figcaption>
+				</td>
+			  </tr>
+			</table>
+		</div>
+		<p>
+			The direct-only render is dominated by the gray area-light shading and crispest visible shadowing, while the indirect-only render is much dimmer and lower-frequency. The indirect image is where the red and blue walls start tinting the bunny and where the shadowed side stops looking unnaturally black.
+		</p>
+		<p>
+			For the unaccumulated bounce visualizations below, we rendered <code>CBbunny.dae</code> with <code>isAccumBounces=false</code> and varied <code>-m</code> from <code>0</code> to <code>5</code>.
+		</p>
+		<div style="display: flex; flex-direction: column; align-items: center;">
+			<table style="width: 100%; text-align: center; border-collapse: collapse;">
+			  <tr>
+				<td><img src="images/part4_cbbunny_unaccum_m0_s1024_l16.png" width="130px"/><figcaption><code>m=0</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_unaccum_m1_s1024_l16.png" width="130px"/><figcaption><code>m=1</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_unaccum_m2_s1024_l16.png" width="130px"/><figcaption><code>m=2</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_unaccum_m3_s1024_l16.png" width="130px"/><figcaption><code>m=3</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_unaccum_m4_s1024_l16.png" width="130px"/><figcaption><code>m=4</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_unaccum_m5_s1024_l16.png" width="130px"/><figcaption><code>m=5</code></figcaption></td>
+			  </tr>
+			</table>
+		</div>
+		<p>
+			The second bounce is the first one where the Cornell box starts to matter: light reflects off the floor and walls and picks up visible red/blue color bleeding on the bunny, especially on the left side and underside. The third bounce is much dimmer and mostly contributes low-frequency fill light in the shadowed regions. Even though the third bounce is subtle, it helps replace the harsh “direct light plus black shadows” look of rasterization with a softer, more plausible distribution of energy across the scene.
+		</p>
+		<p>
+			The next table compares accumulated and unaccumulated bounces for the same depth settings.
+		</p>
+		<div style="display: flex; flex-direction: column; align-items: center;">
+			<table style="width: 100%; text-align: center; border-collapse: collapse;">
+			  <tr>
+				<td><img src="images/part4_cbbunny_accum_m0_s1024_l16.png" width="130px"/><figcaption>Accum <code>m=0</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_accum_m1_s1024_l16.png" width="130px"/><figcaption>Accum <code>m=1</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_accum_m2_s1024_l16.png" width="130px"/><figcaption>Accum <code>m=2</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_accum_m3_s1024_l16.png" width="130px"/><figcaption>Accum <code>m=3</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_accum_m4_s1024_l16.png" width="130px"/><figcaption>Accum <code>m=4</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_accum_m5_s1024_l16.png" width="130px"/><figcaption>Accum <code>m=5</code></figcaption></td>
+			  </tr>
+			  <tr>
+				<td><img src="images/part4_cbbunny_unaccum_m0_s1024_l16.png" width="130px"/><figcaption>Unaccum <code>m=0</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_unaccum_m1_s1024_l16.png" width="130px"/><figcaption>Unaccum <code>m=1</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_unaccum_m2_s1024_l16.png" width="130px"/><figcaption>Unaccum <code>m=2</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_unaccum_m3_s1024_l16.png" width="130px"/><figcaption>Unaccum <code>m=3</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_unaccum_m4_s1024_l16.png" width="130px"/><figcaption>Unaccum <code>m=4</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_unaccum_m5_s1024_l16.png" width="130px"/><figcaption>Unaccum <code>m=5</code></figcaption></td>
+			  </tr>
+			</table>
+		</div>
+		<p>
+			Accumulated renders quickly approach the final image because each depth includes all lower-order bounces as well. The unaccumulated row makes it clear that higher-order bounces decay rapidly: <code>m=2</code> still matters, <code>m=3</code> is subtle, and beyond that the remaining light transport is very low-energy and mostly appears as faint ambient fill.
+		</p>
+		<p>
+			For Russian roulette, we rendered <code>CBbunny.dae</code> with the RR-enabled integrator at depths <code>0, 1, 2, 3, 4, 100</code>.
+		</p>
+		<div style="display: flex; flex-direction: column; align-items: center;">
+			<table style="width: 100%; text-align: center; border-collapse: collapse;">
+			  <tr>
+				<td><img src="images/part4_cbbunny_rr_m0_s1024_l16.png" width="130px"/><figcaption><code>m=0</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_rr_m1_s1024_l16.png" width="130px"/><figcaption><code>m=1</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_rr_m2_s1024_l16.png" width="130px"/><figcaption><code>m=2</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_rr_m3_s1024_l16.png" width="130px"/><figcaption><code>m=3</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_rr_m4_s1024_l16.png" width="130px"/><figcaption><code>m=4</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_rr_m100_s1024_l16.png" width="130px"/><figcaption><code>m=100</code></figcaption></td>
+			  </tr>
+			</table>
+		</div>
+		<p>
+			By <code>m=4</code>, the image is already visually close to the <code>m=100</code> result. That matches the intuition behind Russian roulette here: long diffuse paths are possible, but their energy falls off quickly, so sampling a potentially unbounded path length is useful mainly to keep the estimator unbiased rather than because late bounces dominate the image.
+		</p>
+		<p>
+			Finally, we compared different sample-per-pixel rates on the same scene using <code>4</code> light rays.
+		</p>
+		<div style="display: flex; flex-direction: column; align-items: center;">
+			<table style="width: 100%; text-align: center; border-collapse: collapse;">
+			  <tr>
+				<td><img src="images/part4_cbbunny_spp_1_l4_m5.png" width="110px"/><figcaption><code>s=1</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_spp_2_l4_m5.png" width="110px"/><figcaption><code>s=2</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_spp_4_l4_m5.png" width="110px"/><figcaption><code>s=4</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_spp_8_l4_m5.png" width="110px"/><figcaption><code>s=8</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_spp_16_l4_m5.png" width="110px"/><figcaption><code>s=16</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_spp_64_l4_m5.png" width="110px"/><figcaption><code>s=64</code></figcaption></td>
+				<td><img src="images/part4_cbbunny_spp_1024_l4_m5.png" width="110px"/><figcaption><code>s=1024</code></figcaption></td>
+			  </tr>
+			</table>
+		</div>
+		<p>
+			The progression is monotonic: <code>s=1</code> and <code>s=2</code> are dominated by salt-and-pepper noise, <code>s=16</code> is already structurally reliable, and <code>s=1024</code> is the first setting where the indirect gradients and color bleeding look essentially stable instead of stochastic.
+		</p>
 
 		<h2>Part 5: Adaptive Sampling</h2>
 		<p>
-			Adaptive sampling tracks the running mean and variance of pixel estimates and stops early when the confidence interval is below a target tolerance. This concentrates samples in noisy regions while saving work in smooth areas. The sampling rate visualization highlights where the renderer spent effort: edges, glossy highlights, and indirect shadow boundaries.
+			We implemented adaptive sampling directly inside <code>raytrace_pixel</code>. As each camera sample returns a radiance estimate <code>L</code>, we accumulate the running sums <code>s1 += illum(L)</code> and <code>s2 += illum(L)^2</code>, where <code>illum()</code> converts RGB radiance to a scalar brightness used for the convergence test. Every <code>samplesPerBatch</code> samples, we estimate the mean <code>mu = s1 / n</code>, the unbiased variance <code>(s2 - s1 * s1 / n) / (n - 1)</code>, and the 95% confidence interval width <code>I = 1.96 * sqrt(var / n)</code>. If <code>I &lt;= maxTolerance * mu</code>, we terminate early for that pixel; otherwise we keep sampling until the maximum <code>ns_aa</code> budget is reached. After the loop, we write the final sample count into <code>sampleCountBuffer</code>, and the renderer automatically saves a matching <code>_rate.png</code> visualization alongside the normal output.
+		</p>
+		<p>
+			For the rubric renders below, we used <code>-s 2048 -l 1 -m 5 -a 32 0.05</code> so that adaptive sampling had a large enough ceiling to redistribute work meaningfully. We chose two Lambertian Cornell-box scenes to make the sample-rate maps easy to interpret.
 		</p>
 		<div style="display: flex; flex-direction: column; align-items: center;">
 			<table style="width: 100%; text-align: center; border-collapse: collapse;">
 			  <tr>
 				<td style="text-align: center;">
-				  <img src="images/bunny.png" width="400px"/>
-				  <figcaption>CBbunny.dae — final render</figcaption>
+				  <img src="images/part5_cbbunny_adaptive_s2048_l1_m5.png" width="300px"/>
+				  <figcaption><code>CBbunny.dae</code> adaptive final render</figcaption>
 				</td>
 				<td style="text-align: center;">
-				  <img src="images/bunny_rate.png" width="400px"/>
-				  <figcaption>CBbunny.dae — adaptive sampling rate map</figcaption>
+				  <img src="images/part5_cbbunny_adaptive_s2048_l1_m5_rate.png" width="300px"/>
+				  <figcaption><code>CBbunny.dae</code> sampling-rate image</figcaption>
+				</td>
+			  </tr>
+			  <tr>
+				<td style="text-align: center;">
+				  <img src="images/part5_cbspheres_adaptive_s2048_l1_m5.png" width="300px"/>
+				  <figcaption><code>CBspheres_lambertian.dae</code> adaptive final render</figcaption>
+				</td>
+				<td style="text-align: center;">
+				  <img src="images/part5_cbspheres_adaptive_s2048_l1_m5_rate.png" width="300px"/>
+				  <figcaption><code>CBspheres_lambertian.dae</code> sampling-rate image</figcaption>
 				</td>
 			  </tr>
 			</table>
 		</div>
-
-		<h2>(Optional) Part 6: Extra Credit Opportunities</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-		
-		<h2>Additional Notes (please remove)</h2>
-		<ul>
-			<li>You can also add code if you'd like as so: <code>code code code</code></li>
-			<li>If you'd like to add math equations, 
-				<ul>
-					<li>You can write inline equations like so: \( a^2 + b^2 = c^2 \)</li>
-					<li>You can write display equations like so: \[ a^2 + b^2 = c^2 \]</li>
-				</ul>
-			</li>
-		</ul>
+		<p>
+			In the bunny rate map, the hottest regions are the ear silhouette, the bunny outline against the back wall, and the indirect-light transition zones near contact shadows. Those pixels have high variance because tiny changes in the ray sample can switch between bright direct lighting, dim indirect lighting, and colored wall bounce. Large smooth wall regions are mostly blue, meaning they converged quickly and were allowed to stop far short of the 2048-sample cap. The spheres scene shows the same pattern: most of the empty walls converge fast, while the sphere silhouettes and the high-gradient indirect region near the lower-right sphere demand far more samples. That is exactly the behavior we want from adaptive sampling: spend the budget where the estimator is noisy, and save work where the image is already stable.
+		</p>
 		</div>
 	</body>
 </html>
