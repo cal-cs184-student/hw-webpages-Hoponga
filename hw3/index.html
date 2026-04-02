@@ -45,32 +45,83 @@
 		-->
 
 		<h2>Overview</h2>
-		Give a high-level overview of what you implemented in this homework. Think about what you've built as a whole. Share your thoughts on what interesting things you've learned from completing the homework.
+		<p>
+			In this homework, we built a physically-based path tracer from scratch. Starting from raw camera rays all the way up to global illumination, we implemented the core systems that make rendering work: ray generation, primitive intersection (triangles and spheres), a bounding volume hierarchy for acceleration, direct and indirect lighting, and adaptive sampling to reduce noise efficiently.
+		</p>
+		<p>
+			The most interesting thing I took away from this was how much the rendering pipeline is really just a chain of approximations — each step is an estimate, and the whole thing converges to something physically plausible only when you get all the pieces right. It was also surprisingly satisfying to go from broken rainbow debug views to clean, properly shaded scenes just by filling in the math correctly.
+		</p>
 
 		<h2>Part 1: Ray Generation and Scene Intersection</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
-		<p>Here is an example 2x2 gridlike structure using an HTML table. Each <b>tr</b> is a row and each <b>td</b> is a column in that row. You might find this useful for framing and showing your result images in an organized fashion.</p>
+		<h3>Ray Generation and the Rendering Pipeline</h3>
+		<p>
+			The rendering pipeline starts at the camera. For each pixel on the screen, I generate one or more rays that pass through the virtual camera sensor into the scene. To do this, I convert the pixel's normalized image coordinates \((x, y) \in [0,1]^2\) into camera space, mapping them linearly onto a sensor plane at \(Z = -1\). The sensor extents are defined by the horizontal and vertical field-of-view angles:
+		</p>
+		\[
+			\text{sensor}_x = \left(-\tan\!\left(\frac{hFov}{2}\right),\; \tan\!\left(\frac{hFov}{2}\right)\right), \quad
+			\text{sensor}_y = \left(-\tan\!\left(\frac{vFov}{2}\right),\; \tan\!\left(\frac{vFov}{2}\right)\right)
+		\]
+		<p>
+			So a normalized image coordinate \((x, y)\) maps to a camera-space point:
+		</p>
+		\[
+			p_{cam} = \left((2x - 1)\tan\!\left(\frac{hFov}{2}\right),\;\; (2y - 1)\tan\!\left(\frac{vFov}{2}\right),\;\; -1\right)
+		\]
+		<p>
+			The camera-space ray originates at \((0,0,0)\) and points toward \(p_{cam}\). I then transform this ray into world space using the camera-to-world rotation matrix <code>c2w</code>, with the origin translated to <code>pos</code>. The direction gets normalized, and <code>min_t</code> / <code>max_t</code> are initialized to the near and far clip planes.
+		</p>
+		<p>
+			For pixel sampling (<code>raytrace_pixel</code>), I average <code>ns_aa</code> rays per pixel. Each sample draws a random 2D offset from <code>gridSampler</code>, adds it to the pixel corner, normalizes by image dimensions, and calls <code>generate_ray</code>. The radiance estimates from <code>est_radiance_global_illumination</code> are averaged together to produce the final pixel color.
+		</p>
+
+		<h3>Triangle Intersection</h3>
+		<p>
+			I used the Möller Trumbore algorithm for ray-triangle intersection. Given a ray \(\mathbf{r}(t) = \mathbf{o} + t\mathbf{d}\) and a triangle with vertices \(P_1, P_2, P_3\), the algorithm solves for \((t, u, v)\) — where \(u\) and \(v\) are barycentric coordinates — using Cramer's rule applied to the system derived from setting the ray equal to a point inside the triangle:
+		</p>
+		\[
+			\begin{bmatrix} t \\ u \\ v \end{bmatrix}
+			= \frac{1}{\mathbf{S_1} \cdot \mathbf{E_1}}
+			\begin{bmatrix}
+				\mathbf{S_2} \cdot \mathbf{E_2} \\
+				\mathbf{S_1} \cdot \mathbf{S} \\
+				\mathbf{S_2} \cdot \mathbf{d}
+			\end{bmatrix}
+		\]
+		<p>
+			where \(\mathbf{E_1} = P_2 - P_1\), \(\mathbf{E_2} = P_3 - P_1\), \(\mathbf{S} = \mathbf{o} - P_1\), \(\mathbf{S_1} = \mathbf{d} \times \mathbf{E_2}\), \(\mathbf{S_2} = \mathbf{S} \times \mathbf{E_1}\).
+		</p>
+		<p>
+			An intersection is valid when \(t \in [\texttt{min\_t}, \texttt{max\_t}]\) and \(u \geq 0\), \(v \geq 0\), \(u + v \leq 1\). If valid, I update <code>max_t</code> and fill in the <code>Intersection</code> struct. The surface normal is interpolated from the three vertex normals using the barycentric coordinates \((1 - u - v, u, v)\).
+		</p>
+
+		<h3>Sphere Intersection</h3>
+		<p>
+			For spheres, I substituted the ray equation into the sphere equation \(|\mathbf{r}(t) - \mathbf{c}|^2 = R^2\) and solved the resulting quadratic. If the discriminant is negative there's no intersection; otherwise I take the smaller root that still falls within <code>[min_t, max_t]</code>. The surface normal at the hit point is just the normalized vector from the sphere center to that point.
+		</p>
+
+		<h3>Normal Shading Results</h3>
+		<p>Below are a few scenes rendered with normal shading after completing Parts 1–4:</p>
 		<div style="display: flex; flex-direction: column; align-items: center;">
 			<table style="width: 100%; text-align: center; border-collapse: collapse;">
 			  <tr>
 				<td style="text-align: center;">
-				  <img src="cornell.png" width="400px"/>
-				  <figcaption>Caption goes here.</figcaption>
+				  <img src="images/part1_CBempty.png" width="400px"/>
+				  <figcaption>CBempty.dae — camera ray directions visualized as colors</figcaption>
 				</td>
 				<td style="text-align: center;">
-				  <img src="cornell.png" width="400px"/>
-				  <figcaption>Caption goes here.</figcaption>
+				  <img src="images/part1_CBempty_normals.png" width="400px"/>
+				  <figcaption>CBempty.dae — normal shading after triangle intersection</figcaption>
 				</td>
 			  </tr>
 			  <tr>
 				<td style="text-align: center;">
-				  <img src="cornell.png" width="400px"/>
-				  <figcaption>Caption goes here.</figcaption>
+				  <img src="images/part1_CBspheres.png" width="400px"/>
+				  <figcaption>CBspheres_lambertian.dae — normal shading with sphere intersection</figcaption>
 				</td>
 				<td style="text-align: center;">
-				  <img src="cornell.png" width="400px"/>
-				  <figcaption>Caption goes here.</figcaption>
+				  <img src="images/part1_banana.png" width="400px"/>
+				  <figcaption>banana.dae — normal shading on a mesh</figcaption>
 				</td>
 			  </tr>
 			</table>
