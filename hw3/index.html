@@ -49,14 +49,14 @@
 			In this homework, we built a physically-based path tracer from scratch. Starting from raw camera rays all the way up to global illumination, we implemented the core systems that make rendering work: ray generation, primitive intersection (triangles and spheres), a bounding volume hierarchy for acceleration, direct and indirect lighting, and adaptive sampling to reduce noise efficiently.
 		</p>
 		<p>
-			The most interesting thing I took away from this was how much the rendering pipeline is really just a chain of approximations — each step is an estimate, and the whole thing converges to something physically plausible only when you get all the pieces right. It was also surprisingly satisfying to go from broken rainbow debug views to clean, properly shaded scenes just by filling in the math correctly.
+			The most interesting thing we took away from this was how much the rendering pipeline is really just a chain of approximations — each step is an estimate, and the whole thing converges to something physically plausible only when you get all the pieces right. It was also surprisingly satisfying to go from broken rainbow debug views to clean, properly shaded scenes just by filling in the math correctly.
 		</p>
 
 		<h2>Part 1: Ray Generation and Scene Intersection</h2>
 
 		<h3>Ray Generation and the Rendering Pipeline</h3>
 		<p>
-			The rendering pipeline starts at the camera. For each pixel on the screen, I generate one or more rays that pass through the virtual camera sensor into the scene. To do this, I convert the pixel's normalized image coordinates \((x, y) \in [0,1]^2\) into camera space, mapping them linearly onto a sensor plane at \(Z = -1\). The sensor extents are defined by the horizontal and vertical field-of-view angles:
+			The rendering pipeline starts at the camera. For each pixel on the screen, we generate one or more rays that pass through the virtual camera sensor into the scene. To do this, we convert the pixel's normalized image coordinates \((x, y) \in [0,1]^2\) into camera space, mapping them linearly onto a sensor plane at \(Z = -1\). The sensor extents are defined by the horizontal and vertical field-of-view angles:
 		</p>
 		\[
 			\text{sensor}_x = \left(-\tan\!\left(\frac{hFov}{2}\right),\; \tan\!\left(\frac{hFov}{2}\right)\right), \quad
@@ -69,15 +69,15 @@
 			p_{cam} = \left((2x - 1)\tan\!\left(\frac{hFov}{2}\right),\;\; (2y - 1)\tan\!\left(\frac{vFov}{2}\right),\;\; -1\right)
 		\]
 		<p>
-			The camera-space ray originates at \((0,0,0)\) and points toward \(p_{cam}\). I then transform this ray into world space using the camera-to-world rotation matrix <code>c2w</code>, with the origin translated to <code>pos</code>. The direction gets normalized, and <code>min_t</code> / <code>max_t</code> are initialized to the near and far clip planes.
+			The camera-space ray originates at \((0,0,0)\) and points toward \(p_{cam}\). We then transform this ray into world space using the camera-to-world rotation matrix <code>c2w</code>, with the origin translated to <code>pos</code>. The direction gets normalized, and <code>min_t</code> / <code>max_t</code> are initialized to the near and far clip planes.
 		</p>
 		<p>
-			For pixel sampling (<code>raytrace_pixel</code>), I average <code>ns_aa</code> rays per pixel. Each sample draws a random 2D offset from <code>gridSampler</code>, adds it to the pixel corner, normalizes by image dimensions, and calls <code>generate_ray</code>. The radiance estimates from <code>est_radiance_global_illumination</code> are averaged together to produce the final pixel color.
+			For pixel sampling (<code>raytrace_pixel</code>), we average <code>ns_aa</code> rays per pixel. Each sample draws a random 2D offset from <code>gridSampler</code>, adds it to the pixel corner, normalizes by image dimensions, and calls <code>generate_ray</code>. The radiance estimates from <code>est_radiance_global_illumination</code> are averaged together to produce the final pixel color.
 		</p>
 
 		<h3>Triangle Intersection</h3>
 		<p>
-			I used the Möller Trumbore algorithm for ray-triangle intersection. Given a ray \(\mathbf{r}(t) = \mathbf{o} + t\mathbf{d}\) and a triangle with vertices \(P_1, P_2, P_3\), the algorithm solves for \((t, u, v)\) — where \(u\) and \(v\) are barycentric coordinates — using Cramer's rule applied to the system derived from setting the ray equal to a point inside the triangle:
+			We used the Möller Trumbore algorithm for ray-triangle intersection. Given a ray \(\mathbf{r}(t) = \mathbf{o} + t\mathbf{d}\) and a triangle with vertices \(P_1, P_2, P_3\), the algorithm solves for \((t, u, v)\) — where \(u\) and \(v\) are barycentric coordinates — using Cramer's rule applied to the system derived from setting the ray equal to a point inside the triangle:
 		</p>
 		\[
 			\begin{bmatrix} t \\ u \\ v \end{bmatrix}
@@ -92,12 +92,12 @@
 			where \(\mathbf{E_1} = P_2 - P_1\), \(\mathbf{E_2} = P_3 - P_1\), \(\mathbf{S} = \mathbf{o} - P_1\), \(\mathbf{S_1} = \mathbf{d} \times \mathbf{E_2}\), \(\mathbf{S_2} = \mathbf{S} \times \mathbf{E_1}\).
 		</p>
 		<p>
-			An intersection is valid when \(t \in [\texttt{min\_t}, \texttt{max\_t}]\) and \(u \geq 0\), \(v \geq 0\), \(u + v \leq 1\). If valid, I update <code>max_t</code> and fill in the <code>Intersection</code> struct. The surface normal is interpolated from the three vertex normals using the barycentric coordinates \((1 - u - v, u, v)\).
+			An intersection is valid when \(t \in [\texttt{min\_t}, \texttt{max\_t}]\) and \(u \geq 0\), \(v \geq 0\), \(u + v \leq 1\). If valid, we update <code>max_t</code> and fill in the <code>Intersection</code> struct. The surface normal is interpolated from the three vertex normals using the barycentric coordinates \((1 - u - v, u, v)\).
 		</p>
 
 		<h3>Sphere Intersection</h3>
 		<p>
-			For spheres, I substituted the ray equation into the sphere equation \(|\mathbf{r}(t) - \mathbf{c}|^2 = R^2\) and solved the resulting quadratic. If the discriminant is negative there's no intersection; otherwise I take the smaller root that still falls within <code>[min_t, max_t]</code>. The surface normal at the hit point is just the normalized vector from the sphere center to that point.
+			For spheres, we substituted the ray equation into the sphere equation \(|\mathbf{r}(t) - \mathbf{c}|^2 = R^2\) and solved the resulting quadratic. If the discriminant is negative there's no intersection; otherwise we take the smaller root that still falls within <code>[min_t, max_t]</code>. The surface normal at the hit point is just the normalized vector from the sphere center to that point.
 		</p>
 
 		<h3>Sample Render Results</h3>
@@ -129,7 +129,7 @@
 		
 		<h2>Part 2: Bounding Volume Hierarchy</h2>
 		<p>
-			To accelerate intersection tests, I built a BVH over all primitives. Each node stores a bounding box and a range of primitives; I split by the longest axis of the centroid bounds and partition at the median, recursing until a small leaf threshold is reached. During traversal, rays are first tested against the bounding box, and only if that passes do I test primitives inside. This prunes huge parts of the scene and makes complex meshes feasible to render, especially for high sample counts.
+			To accelerate intersection tests, we built a BVH over all primitives. Each node stores a bounding box and a range of primitives; we split by the longest axis of the centroid bounds and partition at the median, recursing until a small leaf threshold is reached. During traversal, rays are first tested against the bounding box, and only if that passes do we test primitives inside. This prunes huge parts of the scene and makes complex meshes feasible to render, especially for high sample counts.
 		</p>
 		<div style="display: flex; flex-direction: column; align-items: center;">
 			<table style="width: 100%; text-align: center; border-collapse: collapse;">
@@ -148,7 +148,7 @@
 
 		<h2>Part 3: Direct Illumination</h2>
 		<p>
-			I implemented direct lighting using two strategies: uniform hemisphere sampling and importance sampling over lights. For each shading point, I sample an incoming direction, cast a shadow ray to check visibility, and accumulate the BSDF-weighted contribution divided by the PDF. Importance sampling targets the actual light sources, which dramatically reduces variance and noise for the same number of samples.
+			We implemented direct lighting using two strategies: uniform hemisphere sampling and importance sampling over lights. For each shading point, we sample an incoming direction, cast a shadow ray to check visibility, and accumulate the BSDF-weighted contribution divided by the PDF. Importance sampling targets the actual light sources, which dramatically reduces variance and noise for the same number of samples.
 		</p>
 		<div style="display: flex; flex-direction: column; align-items: center;">
 			<table style="width: 100%; text-align: center; border-collapse: collapse;">
@@ -167,7 +167,7 @@
 
 		<h2>Part 4: Global Illumination</h2>
 		<p>
-			Global illumination combines direct lighting with indirect light from multiple bounces. I compute the one-bounce term explicitly and then recursively sample the BSDF to estimate the indirect term, using Russian roulette after a few bounces to keep the estimator unbiased while bounding runtime. The result captures soft interreflection, color bleeding, and brighter shadowed regions compared to direct-only lighting.
+			Global illumination combines direct lighting with indirect light from multiple bounces. We compute the one-bounce term explicitly and then recursively sample the BSDF to estimate the indirect term, using Russian roulette after a few bounces to keep the estimator unbiased while bounding runtime. The result captures soft interreflection, color bleeding, and brighter shadowed regions compared to direct-only lighting.
 		</p>
 		<div style="display: flex; flex-direction: column; align-items: center;">
 			<table style="width: 100%; text-align: center; border-collapse: collapse;">
