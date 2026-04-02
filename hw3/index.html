@@ -128,16 +128,80 @@
 		</div>
 		
 		<h2>Part 2: Bounding Volume Hierarchy</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+		<p>
+			To accelerate intersection tests, I built a BVH over all primitives. Each node stores a bounding box and a range of primitives; I split by the longest axis of the centroid bounds and partition at the median, recursing until a small leaf threshold is reached. During traversal, rays are first tested against the bounding box, and only if that passes do I test primitives inside. This prunes huge parts of the scene and makes complex meshes feasible to render, especially for high sample counts.
+		</p>
+		<div style="display: flex; flex-direction: column; align-items: center;">
+			<table style="width: 100%; text-align: center; border-collapse: collapse;">
+			  <tr>
+				<td style="text-align: center;">
+				  <img src="images/cow.png" width="400px"/>
+				  <figcaption>cow.dae — BVH makes dense meshes tractable</figcaption>
+				</td>
+				<td style="text-align: center;">
+				  <img src="images/bunny.png" width="400px"/>
+				  <figcaption>bunny.dae — BVH-accelerated render</figcaption>
+				</td>
+			  </tr>
+			</table>
+		</div>
 
 		<h2>Part 3: Direct Illumination</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+		<p>
+			I implemented direct lighting using two strategies: uniform hemisphere sampling and importance sampling over lights. For each shading point, I sample an incoming direction, cast a shadow ray to check visibility, and accumulate the BSDF-weighted contribution divided by the PDF. Importance sampling targets the actual light sources, which dramatically reduces variance and noise for the same number of samples.
+		</p>
+		<div style="display: flex; flex-direction: column; align-items: center;">
+			<table style="width: 100%; text-align: center; border-collapse: collapse;">
+			  <tr>
+				<td style="text-align: center;">
+				  <img src="images/CBbunny_H_64_32.png" width="400px"/>
+				  <figcaption>CBbunny.dae — hemisphere sampling (64 samples)</figcaption>
+				</td>
+				<td style="text-align: center;">
+				  <img src="images/CBbunny_16_8.png" width="400px"/>
+				  <figcaption>CBbunny.dae — importance sampling (16 light samples)</figcaption>
+				</td>
+			  </tr>
+			</table>
+		</div>
 
 		<h2>Part 4: Global Illumination</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+		<p>
+			Global illumination combines direct lighting with indirect light from multiple bounces. I compute the one-bounce term explicitly and then recursively sample the BSDF to estimate the indirect term, using Russian roulette after a few bounces to keep the estimator unbiased while bounding runtime. The result captures soft interreflection, color bleeding, and brighter shadowed regions compared to direct-only lighting.
+		</p>
+		<div style="display: flex; flex-direction: column; align-items: center;">
+			<table style="width: 100%; text-align: center; border-collapse: collapse;">
+			  <tr>
+				<td style="text-align: center;">
+				  <img src="images/spheres.png" width="400px"/>
+				  <figcaption>CBspheres.dae — multi-bounce indirect light</figcaption>
+				</td>
+				<td style="text-align: center;">
+				  <img src="images/bunny.png" width="400px"/>
+				  <figcaption>CBbunny.dae — indirect bounce adds soft fill light</figcaption>
+				</td>
+			  </tr>
+			</table>
+		</div>
 
 		<h2>Part 5: Adaptive Sampling</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+		<p>
+			Adaptive sampling tracks the running mean and variance of pixel estimates and stops early when the confidence interval is below a target tolerance. This concentrates samples in noisy regions while saving work in smooth areas. The sampling rate visualization highlights where the renderer spent effort: edges, glossy highlights, and indirect shadow boundaries.
+		</p>
+		<div style="display: flex; flex-direction: column; align-items: center;">
+			<table style="width: 100%; text-align: center; border-collapse: collapse;">
+			  <tr>
+				<td style="text-align: center;">
+				  <img src="images/bunny.png" width="400px"/>
+				  <figcaption>CBbunny.dae — final render</figcaption>
+				</td>
+				<td style="text-align: center;">
+				  <img src="images/bunny_rate.png" width="400px"/>
+				  <figcaption>CBbunny.dae — adaptive sampling rate map</figcaption>
+				</td>
+			  </tr>
+			</table>
+		</div>
 
 		<h2>(Optional) Part 6: Extra Credit Opportunities</h2>
 		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
