@@ -100,28 +100,28 @@
 			For spheres, I substituted the ray equation into the sphere equation \(|\mathbf{r}(t) - \mathbf{c}|^2 = R^2\) and solved the resulting quadratic. If the discriminant is negative there's no intersection; otherwise I take the smaller root that still falls within <code>[min_t, max_t]</code>. The surface normal at the hit point is just the normalized vector from the sphere center to that point.
 		</p>
 
-		<h3>Normal Shading Results</h3>
-		<p>Below are a few scenes rendered with normal shading after completing Parts 1–4:</p>
+		<h3>Sample Render Results</h3>
+		<p>Below are a few scenes rendered after completing Parts 1–4:</p>
 		<div style="display: flex; flex-direction: column; align-items: center;">
 			<table style="width: 100%; text-align: center; border-collapse: collapse;">
 			  <tr>
 				<td style="text-align: center;">
-				  <img src="images/part1_CBempty.png" width="400px"/>
-				  <figcaption>CBempty.dae — camera ray directions visualized as colors</figcaption>
+				  <img src="images/CBempty.png" width="400px"/>
+				  <figcaption>CBempty.dae — simple Cornell box test</figcaption>
 				</td>
 				<td style="text-align: center;">
-				  <img src="images/part1_CBempty_normals.png" width="400px"/>
-				  <figcaption>CBempty.dae — normal shading after triangle intersection</figcaption>
+				  <img src="images/CBspheres.png" width="400px"/>
+				  <figcaption>CBspheres.dae — spheres and diffuse walls</figcaption>
 				</td>
 			  </tr>
 			  <tr>
 				<td style="text-align: center;">
-				  <img src="images/part1_CBspheres.png" width="400px"/>
-				  <figcaption>CBspheres_lambertian.dae — normal shading with sphere intersection</figcaption>
+				  <img src="images/cow.png" width="400px"/>
+				  <figcaption>cow.dae — mesh intersection sanity check</figcaption>
 				</td>
 				<td style="text-align: center;">
-				  <img src="images/part1_banana.png" width="400px"/>
-				  <figcaption>banana.dae — normal shading on a mesh</figcaption>
+				  <img src="images/bunny.png" width="400px"/>
+				  <figcaption>bunny.dae — complex geometry render</figcaption>
 				</td>
 			  </tr>
 			</table>
