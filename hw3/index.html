@@ -28,18 +28,13 @@
 	<body>
 		<div class="container">
 		<h1>CS184/284A Spring 2026 Homework 3 Write-Up</h1>
-		<div style="text-align: center;">Names: </div>
+		<div style="text-align: center;">Names: Kailash Ranganathan, Anirudh Kotamraju</div>
 
 		<br>
 
 		Link to webpage: <a href="https://cal-cs184-student.github.io/hw-webpages-Hoponga/hw3/">cal-cs184-student.github.io/hw-webpages-Hoponga/hw3/</a>
 		Link to GitHub repository: <a href="https://github.com/cal-cs184-student/hw3-pathtracer-superpgangs">github.com/cal-cs184-student/hw3-pathtracer-superpgangs</a>
 		
-		<figure>
-			<img src="cornell.png" alt="Cornell Boxes with Bunnies" style="width:70%"/>
-			<figcaption>You can add images with captions!</figcaption>
-		</figure>
-
 		<!--
 		We've already added one heading per part, to make your write-up as navigable when grading. Please fit your write-up within these sections!
 		-->
@@ -359,6 +354,14 @@
 		</div>
 		<p>
 			In the bunny rate map, the hottest regions are the ear silhouette, the bunny outline against the back wall, and the indirect-light transition zones near contact shadows. Those pixels have high variance because tiny changes in the ray sample can switch between bright direct lighting, dim indirect lighting, and colored wall bounce. Large smooth wall regions are mostly blue, meaning they converged quickly and were allowed to stop far short of the 2048-sample cap. The spheres scene shows the same pattern: most of the empty walls converge fast, while the sphere silhouettes and the high-gradient indirect region near the lower-right sphere demand far more samples. That is exactly the behavior we want from adaptive sampling: spend the budget where the estimator is noisy, and save work where the image is already stable.
+		</p>
+
+		<h2>Collaboration</h2>
+		<p>
+			We pair programmed for the entire homework. For each task, we alternated who was typing and who was directing the work out loud, so both of us stayed involved in debugging, implementation, and render analysis instead of splitting the assignment into isolated chunks.
+		</p>
+		<p>
+			This worked well because it forced us to explain the math and the code to each other as we went, which made mistakes in the ray equations, bounce logic, and sampling logic easier to catch early. The main thing we learned was that graphics code becomes much easier to reason about when one person is focused on the local implementation details while the other keeps track of the bigger picture of coordinate frames, probability factors, and what the rendered output should look like.
 		</p>
 		</div>
 	</body>
