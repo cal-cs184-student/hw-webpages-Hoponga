@@ -1,124 +1,213 @@
 <html>
-	<head>
-		<meta charset="UTF-8">
-		<script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=default'></script>
-		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-		<style>
-			h1 {
-				text-align: center;
-			}
+  <head>
+    <meta charset="UTF-8" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=default"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      h1 {
+        text-align: center;
+      }
 
-			.container {
-				margin: 0 auto;
-				padding: 60px 20%;
-			}
+      .container {
+        margin: 0 auto;
+        padding: 60px 20%;
+      }
 
-			figure {
-				text-align: center;
-			}
+      figure {
+        text-align: center;
+      }
 
-			img {
-				display: inline-block;
-			}
+      img {
+        display: inline-block;
+      }
 
-			body {
-				font-family: 'Inter', sans-serif;
-			}
+      body {
+        font-family: "Inter", sans-serif;
+      }
 
-			table {
-				border-collapse: collapse;
-				width: 100%;
-			}
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
 
-			th, td {
-				padding: 6px 12px;
-				text-align: left;
-				border: 1px solid #ccc;
-			}
+      th,
+      td {
+        padding: 6px 12px;
+        text-align: left;
+        border: 1px solid #ccc;
+      }
 
-			th {
-				background: #f5f5f5;
-			}
-		</style>
-	</head>
-	<body>
-		<div class="container">
-		<h1>CS184 Final Project Milestone</h1>
-		<div style="text-align: center;">Core-Collapse Supernova Simulator</div>
+      th {
+        background: #f5f5f5;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>CS184 Final Project Milestone</h1>
+      <div style="text-align: center">Core-Collapse Supernova Simulator</div>
+      <div style="text-align: center">
+        Kailash Ranganathan, Anirudh Kotamraju, Shaoyuan Gao
+      </div>
 
-		<br>
+      <br />
 
-		
+      <h2>Project overview</h2>
+      <p>
+        Our project is to make a supernova (star core-collapse) simulator with
+        offline rendering. We want to render a visually convincing simulation of
+        the key stages of a supernova (shock launch, shock stall, delayed
+        neutrino-driven revival, buoyant plume formation, asymmetric shock
+        breakout). The stretch goal would be a real-time browser-based
+        simulation.
+      </p>
 
-		<h2>Project overview</h2>
-		<p>
-			Our project is to make a supernova (star core-collapse) simulator with offline rendering, with the final goal being to render a visually convincing simulation of the key stages of a supernova, including shock launch, shock stall, delayed neutrino-driven revival, buoyant plume formation, and asymmetric shock breakout. 
-		</p>
+      <h2>Project update so far</h2>
 
-		
+      <h3>Reading</h3>
+      <p>
+        Anirudh has worked on a good amount of astrophysical simulation for
+        research, and Kailash has a background in more condensed matter physics,
+        but supernova dynamics &amp; high energy physics were completely new to
+        all of us. We started by trying to read through a bunch of papers on the
+        supernova mechanism and trying to get a much better understanding of
+        what this sort of idea would actually entail and what sort of simulator
+        we could actually write. After reading about the physics of core
+        collapse, we converged on a "reduced model" where we basically do a
+        fluid simulation (to be specific, a compressible Euler system) where the
+        gravitational potential is just the spherically symmetric potential of a
+        proton-neutron star (think of it as the "inside" pushing force),
+      </p>
 
-		<h2>Project update</h2>
-		What we've worked on so far: 
+      <p>
+        In any dynamical simulation we have objects of state that we keep track
+        of per timestep. In our simulation, the main state objects are the
+        density field, entropy field, velocity field, and tracer positions,
+        which are basically physically meaningless particles that exist to
+        visualize the flow of the star fluid. In a supernova, the main mechanism
+        causing the explosion is the initial core-collapse (caused by nuclear
+        fusion not able to offset the inner pull of gravity), which causes a
+        shockwave to launch radially outwards. Our "post-bounce" simulation
+        basically simulates everything after the shockwave launches and starts
+        to grow outward. In short, we don't care about the life of the star or
+        the core collapse itself, but instead after the compact object
+        (proton-neutron star) forms and the shock launches. There are a couple
+        mechanisms that come into play here. First of all, in the shockwave's
+        launch, it loses energy very rapidly as it expands and could "stall"
+        partway before continuing after a while due to neutrino heating in the
+        star itself. This is the "delayed neutrino-driven explosion mechanism"
+        that a lot of current supernova literature talk about, and for now
+        something we hard coded into our simulator as a shock that expands and
+        then stalls at some radius before reviving after a delay.
+      </p>
 
-		<h3>Background Readings</h3>
-		<p>
-			Anirudh has worked on a good amount of astrophysical simulation for research, and Kailash has a background in more condensed matter physics, but supernova dynamics/HEP was completely new to all of us. We started by trying to read through a bunch of papers on the supernova mechanism and trying to get a much better understanding of what this sort of idea would actually entail and what sort of simulator we could actually write. After reading about the physics of core collapse, we converged on a "reduced model" where we basically do a fluid simulation (to be specific, a compressible Euler system) where the gravitational potential is just the spherically symmetric potential of a proton-neutron star (think of it as the "inside" pushing force), 
-		</p>
+      <h3>How did we design the simulator?</h3>
+      <p>
+        Initially, we settled for a 2D fluid simulation of the supernova,
+        imagining the star as a cylinder and simulating the shockwave as a
+        circle expanding outwards. We use a finite volume method to propagate
+        the fluid grid forward in time. The way we simualte the shockwave's
+        launch and stall is by hardcoding the shock radius time evolution to
+        increase, then stall for a bit, and then keep going using a smooth step
+        function. The way the shock "shell" plays into the dynamics is to define
+        different regions of heating/cooling. In the different regions, our
+        update rules are slightly different. Outside the shock, the fluid fields
+        are basically unaffected by the shock, and just evolve according to the
+        Euler equations. Within the shock itself, we have a cooling region where
+        entropy is lost to simulate the shock losing energy as it expands, and
+        similarly near the shock radius we have a gain region where energy is
+        added to simulate the neutrino-driven revival. Both of these go into a
+        "state.heating" variable that is added to the entropy update in our
+        equations of state. Our equations of state are moved forward with a
+        finite volume method, specifically semi-Lagrangian advection, where the
+        forces for velocity update include gravity (inwared radial), the buoyant
+        force (calculated via entropy averaging in the neighborhood), the shock
+        push (calculated via a Gaussian around the shock radius) acts around the
+        shock shell. One key thing we noticed is that if we only have these
+        aforementioned components, everything is spherically symmetric. Our
+        current solution is to add a sinusoidal perturbation to all forces to
+        break the symmetry and get some more interesting shock/plume shapes, but
+        we think there is a better solution.
+      </p>
 
-		<p>
-			In any dynamical simulation we have certain objects of state that we keep track of per timestep. In our simulation, the main objects of state are the density field, entropy field, velocity field, and tracer positions, which are basically physically meaningless particles that exist to visualize the flow of the star fluid. 
+      <h2>Current results</h2>
+      <p>This is what we have so far:</p>
 
-			In a supernova, the main mechanism causing the explosion is the initial core-collapse (caused by nuclear fusion not able to offset the inner pull of gravity), which causes a shockwave to launch radially outwards. This "post-bounce" simulation basically simulates everything after the shockwave launches and starts to grow outward. In short, we don't care about the life of the star or the core collapse itself, but instead after the compact object (proton-neutron star) forms and the shock launches. There are a couple mechanisms that come into play here. 
+      <div
+        style="
+          display: flex;
+          gap: 24px;
+          justify-content: center;
+          align-items: flex-start;
+          flex-wrap: wrap;
+          margin: 24px 0;
+        "
+      >
+        <figure style="margin: 0">
+          <img
+            src="frame_0060.png"
+            style="width: 340px"
+            alt="2D baseline frame at t=0.72s showing asymmetric stalled shock"
+          />
+          <figcaption>sample 2d generation</figcaption>
+        </figure>
+      </div>
 
-			First of all, in the shockwave's launch, it loses energy very rapidly as it expands and could "stall" partway before continuing after a while due to neutrino heating in the star itself. This is the "delayed neutrino-driven explosion mechanism" that pervades current supernova literature, and for now something we hard coded into our simulator as a shock that expands and then stalls at some radius before reviving after a delay. 
-		</p>
+      <h2>Remaining work</h2>
+      <p>
+        There is a lot of remaining work for us to do! There are the graphics
+        things, such as implementing a full 3D camera view with some sort of
+        user interactivity (most likely using three.js) but as you could
+        probably guess from our above explanation, there is a LOT of work to do
+        with our simulation/solver. In particular, there are so many heuristics
+        we're using related to the shock radius growth and the heating/cooling
+        in the gain region. Also, having access to more compute (8xH100s from
+        our research projects), we are interested in exploring more
+        high-resolution simulations with more tracer particles -- it would just
+        be cool to bump up the grid resolution and number of tracer particles
+        simulated to see how much more detail we can get in the shock/plume
+        shapes.
+      </p>
 
-		<h3>How did we design the simulator?</h3>
-		<p>
-			Initially, we settled for a 2D fluid simulation of the supernova, imagining the star as a cylinder and simulating the shockwave as a circle expanding outwards. We use a finite volume method to propagate the fluid grid forward in time. 
-
-			The way we simualte the shockwave's launch and stall is by hardcoding the shock radius time evolution to increase, then stall for a bit, and then keep going using a smooth step function. The way the shock "shell" plays into the dynamics is to define different regions of heating/cooling:  
-
-			In the different regions, our update rules are slightly different. Outside the shock, the fluid fields are basically unaffected by the shock, and just evolve according to the Euler equations. Within the shock itself, we have a cooling region where entropy is lost to simulate the shock losing energy as it expands, and likewise near the shock radius we have a gain region where energy is added to simulate the neutrino-driven revival. Both of these go into a "state.heating" variable that is added to the entropy update in our equations of state. 
-
-			Our equations of state are moved forward with a finite volume method, specifically semi-Lagrangian advection, where the forces for velocity update include gravity (inwared radial), the buoyant force (calculated via entropy averaging in the neighborhood), the shock push (calculated via a Gaussian around the shock radius) acts around the shock shell. 
-
-			One key thing we noticed is that if we only have these aforementioned components, everything is spherically symmetric. Our current solution is to add a sinusoidal perturbation to all forces to break the symmetry and get some more interesting shock/plume shapes, but we think there is a better solution. 
-			
-		</p>
-
-		
-		<h2>Current results</h2>
-		<p>
-			The 2D baseline produces stable runs with visible shock stall, gain-region heating, and asymmetric plume growth. The 3D hero preset shows convincing early asymmetry from the dipole/swirl forcing, though late-time morphology still smooths out too much 
-		</p>
-
-		<div style="display: flex; gap: 24px; justify-content: center; align-items: flex-start; flex-wrap: wrap; margin: 24px 0;">
-			<figure style="margin: 0;">
-				<img src="frame_0060.png" style="width: 340px;" alt="2D baseline frame at t=0.72s showing asymmetric stalled shock"/>
-				<figcaption>sample 2d generation</figcaption>
-			</figure>
-		</div>
-
-		<h2>Remaining work</h2>
-		<p>
-			There is a lot of remaining work for us to do! There are the graphics things, such as implementing a full 3D camera view with some sort of user interactivity (most likely using three.js) but as you could probably guess from our above explanation, there is a LOT of work to do with our simulation/solver. 
-
-			In particular, there are so many heuristics we're using related to the shock radius growth and the heating/cooling in the gain region. 
-
-
-			Also, having access to more compute (8xH100s from our research projects), we are interested in exploring more high-resolution simulations with more tracer particles -- it would just be cool to bump up the grid resolution and number of tracer particles simulated to see how much more detail we can get in the shock/plume shapes. 
-		</p>
-
-		<h2>References</h2>
-		<ul>
-			<li>Burrows &amp; Vartanyan, <a href="https://www.nature.com/articles/s41586-020-03059-w">"Core-collapse supernova explosion theory"</a>, <em>Nature</em>, 2021.</li>
-			<li>Burrows et al., <a href="https://link.springer.com/article/10.1007/s11214-017-0450-9">"Crucial Physical Dependencies of the Core-Collapse Supernova Mechanism"</a>, <em>Space Science Reviews</em>, 2018.</li>
-			<li>Janka, <a href="https://doi.org/10.1146/annurev-nucl-102711-094901">"Explosion Mechanisms of Core-Collapse Supernovae"</a>, <em>Annual Review of Nuclear and Particle Science</em>, 2012.</li>
-			<li>M&uuml;ller, <a href="https://link.springer.com/article/10.1007/s41115-020-0008-5">"Hydrodynamics of core-collapse supernovae and their progenitors"</a>, <em>Living Reviews in Computational Astrophysics</em>, 2020.</li>
-			<li>Mezzacappa et al., <a href="https://link.springer.com/article/10.1007/s41115-020-00010-8">"Physical, numerical, and computational challenges of modeling neutrino transport in core-collapse supernovae"</a>, <em>Living Reviews in Computational Astrophysics</em>, 2020.</li>
-		</ul>
-
-		</div>
-	</body>
+      <h2>References</h2>
+      <ul>
+        <li>
+          Burrows &amp; Vartanyan,
+          <a href="https://www.nature.com/articles/s41586-020-03059-w"
+            >"Core-collapse supernova explosion theory"</a
+          >, <em>Nature</em>, 2021.
+        </li>
+        <li>
+          Burrows et al.,
+          <a href="https://link.springer.com/article/10.1007/s11214-017-0450-9"
+            >"Crucial Physical Dependencies of the Core-Collapse Supernova
+            Mechanism"</a
+          >, <em>Space Science Reviews</em>, 2018.
+        </li>
+        <li>
+          Janka,
+          <a href="https://doi.org/10.1146/annurev-nucl-102711-094901"
+            >"Explosion Mechanisms of Core-Collapse Supernovae"</a
+          >, <em>Annual Review of Nuclear and Particle Science</em>, 2012.
+        </li>
+        <li>
+          M&uuml;ller,
+          <a href="https://link.springer.com/article/10.1007/s41115-020-0008-5"
+            >"Hydrodynamics of core-collapse supernovae and their
+            progenitors"</a
+          >, <em>Living Reviews in Computational Astrophysics</em>, 2020.
+        </li>
+        <li>
+          Mezzacappa et al.,
+          <a href="https://link.springer.com/article/10.1007/s41115-020-00010-8"
+            >"Physical, numerical, and computational challenges of modeling
+            neutrino transport in core-collapse supernovae"</a
+          >, <em>Living Reviews in Computational Astrophysics</em>, 2020.
+        </li>
+      </ul>
+    </div>
+  </body>
 </html>
