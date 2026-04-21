@@ -79,10 +79,12 @@
 
 			The way we simualte the shockwave's launch and stall is by hardcoding the shock radius time evolution to increase, then stall for a bit, and then keep going using a smooth step function. The way the shock "shell" plays into the dynamics is to define different regions of heating/cooling:  
 
-			In the different regions, our update rules are slightly different. 
+			In the different regions, our update rules are slightly different. Outside the shock, the fluid fields are basically unaffected by the shock, and just evolve according to the Euler equations. Within the shock itself, we have a cooling region where entropy is lost to simulate the shock losing energy as it expands, and likewise near the shock radius we have a gain region where energy is added to simulate the neutrino-driven revival. Both of these go into a "state.heating" variable that is added to the entropy update in our equations of state. 
+
+			Our equations of state are moved forward with a finite volume method, specifically semi-Lagrangian advection, where the forces for velocity update include gravity (inwared radial), the buoyant force (calculated via entropy averaging in the neighborhood), the shock push (calculated via a Gaussian around the shock radius) acts around the shock shell. 
+
+			One key thing we noticed is that if we only have these aforementioned components, everything is spherically symmetric. Our current solution is to add a sinusoidal perturbation to all forces to break the symmetry and get some more interesting shock/plume shapes, but we think there is a better solution. 
 			
-			
-			a "gain region" in the star where the shockwave loses energy as it expands through it, and then after some time, energy is added back to simulate the neutrino-driven revival. Behind the shock, this region is heated, and the buoyant force 
 		</p>
 
 		
