@@ -55,33 +55,28 @@
 			Our project is to make a supernova (star core-collapse) simulator with offline rendering, with the final goal being to render a visually convincing simulation of the key stages of a supernova, including shock launch, shock stall, delayed neutrino-driven revival, buoyant plume formation, and asymmetric shock breakout. 
 		</p>
 
+		
+
 		<h2>Project update</h2>
-		What we've implemented so far: 
+		What we've worked on so far: 
 
-		<h3>2D reduced-physics solver</h3>
+		<h3>Background Readings</h3>
 		<p>
-			The foundation of our simulator is a 2D post-bounce model involving: 
-		</p>
-		<ul>
-			<li>A stalled shock that revives on a delayed timescale driven by gain-region heating</li>
-			<li>Inner cooling near the proto-neutron star surface and heating in the gain region above it</li>
-			<li>Buoyancy-driven plumes seeded by angular perturbations</li>
-			<li>Low-mode asymmetry (dipole + quadrupole) that ramps in over time</li>
-		</ul>
-		<p>
-			Tracer particles track ejecta motion and make the outflow structure easier to read in rendered frames.
+			Anirudh has worked on a good amount of astrophysical simulation for research, and Kailash has a background in more condensed matter physics, but supernova dynamics/HEP was completely new to all of us. We started by trying to read through a bunch of papers on the supernova mechanism and trying to get a much better understanding of what this sort of idea would actually entail and what sort of simulator we could actually write. After reading about the physics of core collapse, we converged on a "reduced model" where we basically do a fluid simulation (to be specific, a compressible Euler system) where the gravitational potential is just the spherically symmetric potential of a proton-neutron star (think of it as the "inside" pushing force), 
 		</p>
 
-		<h3>3D extension</h3>
 		<p>
-			Our extension into 3D (with our ultimate goal being to have a live rendering that you can pan through) required us to refactor the solver to work in arbitrary dimensions. 
+			In any dynamical simulation we have certain objects of state that we keep track of per timestep. In our simulation, the main objects of state are the density field, entropy field, velocity field, and tracer positions, which are basically physically meaningless particles that exist to visualize the flow of the star fluid. 
+
+			In a supernova, the main mechanism causing the explosion is the initial core-collapse (caused by nuclear fusion not able to offset the inner pull of gravity), which causes a shockwave to launch radially outwards. This "post-bounce" simulation basically simulates everything after the shockwave launches and starts to grow outward. In short, we don't care about the life of the star or the core collapse itself, but instead after the compact object (proton-neutron star) forms and the shock launches. There are a couple mechanisms that come into play here. 
+
+			First of all, in the shockwave's launch, it loses energy very rapidly as it expands and could "stall" partway before continuing after a while due to neutrino heating in the star itself. This is the "delayed neutrino-driven explosion mechanism" that pervades current supernova literature, and for now something we hard coded into our simulator as a shock that expands and then stalls at some radius before reviving after a delay. 
 		</p>
-		<ul>
-			<li>Volumetric dipole and quadrupole asymmetry forcing (not just 2D patterns extruded through z)</li>
-			<li>A tangential swirl field in the gain and shock region</li>
-			<li>Orthogonal xy, xz, yz slice insets for debugging</li>
-			<li>A pseudo-volumetric "hero" projection that composites emissive slices front-to-back with a depth-parallax shift &mdash; not physically correct volume rendering, but looks much more like a volumetric event than raw slices</li>
-		</ul>
+
+		<h3>How did we design the simulator?</h3>
+		<p>
+			Initially, we settled for a 2D fluid simulation of the supernova, imagining the star as a cylinder and simulating the shockwave as a circle expanding outwards. We use a finite volume method to propagate the fluid grid forward in time. 
+		</p>
 
 		
 		<h2>Current results</h2>
