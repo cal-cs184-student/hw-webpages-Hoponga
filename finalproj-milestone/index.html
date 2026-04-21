@@ -77,7 +77,12 @@
 		<p>
 			Initially, we settled for a 2D fluid simulation of the supernova, imagining the star as a cylinder and simulating the shockwave as a circle expanding outwards. We use a finite volume method to propagate the fluid grid forward in time. 
 
-			The way we simualte the shockwave's launch and stall is by hardcoding a "gain region" in the star where the shockwave loses energy as it expands through it, and then after some time, energy is added back to simulate the neutrino-driven revival. Behind the shock, this region is heated, and the buoyant force 
+			The way we simualte the shockwave's launch and stall is by hardcoding the shock radius time evolution to increase, then stall for a bit, and then keep going using a smooth step function. The way the shock "shell" plays into the dynamics is to define different regions of heating/cooling:  
+
+			In the different regions, our update rules are slightly different. 
+			
+			
+			a "gain region" in the star where the shockwave loses energy as it expands through it, and then after some time, energy is added back to simulate the neutrino-driven revival. Behind the shock, this region is heated, and the buoyant force 
 		</p>
 
 		
@@ -97,8 +102,7 @@
 		<p>
 			There is a lot of remaining work for us to do! There are the graphics things, such as implementing a full 3D camera view with some sort of user interactivity (most likely using three.js) but as you could probably guess from our above explanation, there is a LOT of work to do with our simulation/solver. 
 
-			In particular, the shock evolution is completely hardcoded, and this is not good. Ideally, we would like to implement a more self-consistent shock evolution where the shock's position and velocity are determined by the fluid conditions at the shock front, and the shock's energy loss and gain are determined by the fluid conditions in the gain region. This is a pretty big lift, but it would make our simulation much more physically accurate and less hacky.
-
+			In particular, there are so many heuristics we're using related to the shock radius growth and the heating/cooling in the gain region. 
 
 
 			Also, having access to more compute (8xH100s from our research projects), we are interested in exploring more high-resolution simulations with more tracer particles -- it would just be cool to bump up the grid resolution and number of tracer particles simulated to see how much more detail we can get in the shock/plume shapes. 
