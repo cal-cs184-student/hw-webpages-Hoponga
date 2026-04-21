@@ -36,7 +36,7 @@
 		Link to GitHub repository: (TODO) <a href="https://cs184.eecs.berkeley.edu/sp25">cs184.eecs.berkeley.edu/sp25</a>
 		
 		<figure>
-			<img src="cornell.png" alt="Cornell Boxes with Bunnies" style="width:70%"/>
+			<img src="docs/images/cornell.png" alt="Cornell Boxes with Bunnies" style="width:70%"/>
 			<figcaption>You can add images with captions!</figcaption>
 		</figure>
 
@@ -49,7 +49,7 @@
 			In this homework, we built a physically-based path tracer from scratch. Starting from raw camera rays all the way up to global illumination, we implemented the core systems that make rendering work: ray generation, primitive intersection (triangles and spheres), a bounding volume hierarchy for acceleration, direct and indirect lighting, and adaptive sampling to reduce noise efficiently.
 		</p>
 		<p>
-			The most interesting thing we took away from this was how much the rendering pipeline is really just a chain of approximations — each step is an estimate, and the whole thing converges to something physically plausible only when you get all the pieces right. It was also surprisingly satisfying to go from broken rainbow debug views to clean, properly shaded scenes just by filling in the math correctly.
+			The most interesting thing we took away from this was how much the rendering pipeline is really just a chain of approximations - each step is an estimate, and the whole thing converges to something physically plausible only when you get all the pieces right. A concrete hurdle was getting triangle intersection and BVH traversal to agree on <code>t</code> bounds; once we consistently updated <code>max_t</code> and handled epsilon offsets, the "missing triangles" artifacts disappeared and the rest of the pipeline started to behave.
 		</p>
 
 		<h2>Part 1: Ray Generation and Scene Intersection</h2>
@@ -77,7 +77,7 @@
 
 		<h3>Triangle Intersection</h3>
 		<p>
-			We used the Möller Trumbore algorithm for ray-triangle intersection. Given a ray \(\mathbf{r}(t) = \mathbf{o} + t\mathbf{d}\) and a triangle with vertices \(P_1, P_2, P_3\), the algorithm solves for \((t, u, v)\) — where \(u\) and \(v\) are barycentric coordinates — using Cramer's rule applied to the system derived from setting the ray equal to a point inside the triangle:
+			We used the Möller Trumbore algorithm for ray-triangle intersection. Given a ray \(\mathbf{r}(t) = \mathbf{o} + t\mathbf{d}\) and a triangle with vertices \(P_1, P_2, P_3\), the algorithm solves for \((t, u, v)\) - where \(u\) and \(v\) are barycentric coordinates - using Cramer's rule applied to the system derived from setting the ray equal to a point inside the triangle:
 		</p>
 		\[
 			\begin{bmatrix} t \\ u \\ v \end{bmatrix}
@@ -100,28 +100,22 @@
 			For spheres, we substituted the ray equation into the sphere equation \(|\mathbf{r}(t) - \mathbf{c}|^2 = R^2\) and solved the resulting quadratic. If the discriminant is negative there's no intersection; otherwise we take the smaller root that still falls within <code>[min_t, max_t]</code>. The surface normal at the hit point is just the normalized vector from the sphere center to that point.
 		</p>
 
-		<h3>Sample Render Results</h3>
-		<p>Below are a few scenes rendered after completing Parts 1–4:</p>
+		<h3>Normal Shading Results</h3>
+		<p>Below are normal-shaded renders for a few small scenes.</p>
 		<div style="display: flex; flex-direction: column; align-items: center;">
 			<table style="width: 100%; text-align: center; border-collapse: collapse;">
 			  <tr>
 				<td style="text-align: center;">
-				  <img src="images/CBempty.png" width="400px"/>
-				  <figcaption>CBempty.dae — simple Cornell box test</figcaption>
+				  <img src="docs/images/part1_CBempty_normal.png" width="300px"/>
+				  <figcaption>CBempty.dae - normal shading</figcaption>
 				</td>
 				<td style="text-align: center;">
-				  <img src="images/CBspheres.png" width="400px"/>
-				  <figcaption>CBspheres.dae — spheres and diffuse walls</figcaption>
-				</td>
-			  </tr>
-			  <tr>
-				<td style="text-align: center;">
-				  <img src="images/cow.png" width="400px"/>
-				  <figcaption>cow.dae — mesh intersection sanity check</figcaption>
+				  <img src="docs/images/part1_CBspheres_normal.png" width="300px"/>
+				  <figcaption>CBspheres.dae - normal shading</figcaption>
 				</td>
 				<td style="text-align: center;">
-				  <img src="images/bunny.png" width="400px"/>
-				  <figcaption>bunny.dae — complex geometry render</figcaption>
+				  <img src="docs/images/part1_cube_normal.png" width="300px"/>
+				  <figcaption>cube.dae - normal shading</figcaption>
 				</td>
 			  </tr>
 			</table>
@@ -129,93 +123,255 @@
 		
 		<h2>Part 2: Bounding Volume Hierarchy</h2>
 		<p>
-			To accelerate intersection tests, we built a BVH over all primitives. Each node stores a bounding box and a range of primitives; we split by the longest axis of the centroid bounds and partition at the median, recursing until a small leaf threshold is reached. During traversal, rays are first tested against the bounding box, and only if that passes do we test primitives inside. This prunes huge parts of the scene and makes complex meshes feasible to render, especially for high sample counts.
+			To accelerate intersection tests, we built a BVH over all primitives. Each node stores a bounding box and a range of primitives; we compute a centroid bounding box, split along its longest axis, and partition at the median. We recurse until a small leaf threshold is reached. At render time, rays are first tested against node bounding boxes; only if the box is hit do we test primitives inside. This pruning is crucial for meshes with tens or hundreds of thousands of triangles.
 		</p>
+
+		<h3>Normal Shading on Large Scenes</h3>
 		<div style="display: flex; flex-direction: column; align-items: center;">
 			<table style="width: 100%; text-align: center; border-collapse: collapse;">
 			  <tr>
 				<td style="text-align: center;">
-				  <img src="images/cow.png" width="400px"/>
-				  <figcaption>cow.dae — BVH makes dense meshes tractable</figcaption>
+				  <img src="docs/images/part2_dragon_normal.png" width="300px"/>
+				  <figcaption>dragon.dae - normal shading with BVH</figcaption>
 				</td>
 				<td style="text-align: center;">
-				  <img src="images/bunny.png" width="400px"/>
-				  <figcaption>bunny.dae — BVH-accelerated render</figcaption>
+				  <img src="docs/images/part2_wall-e_normal.png" width="300px"/>
+				  <figcaption>wall-e.dae - normal shading with BVH</figcaption>
 				</td>
+				<td style="text-align: center;">
+				  <img src="docs/images/part2_bunny_normal.png" width="300px"/>
+				  <figcaption>bunny.dae - normal shading with BVH</figcaption>
+				</td>
+			  </tr>
+			</table>
+		</div>
+
+		<h3>Timing Comparison (BVH vs. No BVH)</h3>
+		<p>
+			We compared render times on two moderately complex scenes at 480x360 with 1 sample per pixel. With BVH enabled, both scenes render in well under a tenth of a second; without BVH, the same scenes slow down by one to two orders of magnitude because every ray tests against every primitive. The bunny scene is the most dramatic: BVH reduces average intersection tests per ray from ~33k down to ~11.
+		</p>
+		<div style="display: flex; flex-direction: column; align-items: center;">
+			<table style="width: 100%; text-align: center; border-collapse: collapse;">
+			  <tr>
+				<th>Scene</th>
+				<th>With BVH</th>
+				<th>No BVH</th>
+				<th>Speedup</th>
+			  </tr>
+			  <tr>
+				<td>bunny.dae</td>
+				<td>0.075 s</td>
+				<td>18.70 s</td>
+				<td>~250x</td>
+			  </tr>
+			  <tr>
+				<td>cow.dae</td>
+				<td>0.055 s</td>
+				<td>2.75 s</td>
+				<td>~50x</td>
 			  </tr>
 			</table>
 		</div>
 
 		<h2>Part 3: Direct Illumination</h2>
 		<p>
-			We implemented direct lighting using two strategies: uniform hemisphere sampling and importance sampling over lights. For each shading point, we sample an incoming direction, cast a shadow ray to check visibility, and accumulate the BSDF-weighted contribution divided by the PDF. Importance sampling targets the actual light sources, which dramatically reduces variance and noise for the same number of samples.
+			We implemented direct lighting in two ways: uniform hemisphere sampling and light importance sampling. For each hit point, we sample an incoming direction, cast a shadow ray to check visibility, and accumulate the BSDF-weighted contribution divided by the PDF. Importance sampling explicitly targets light sources and reduces variance for the same number of samples.
 		</p>
+
+		<h3>Hemisphere vs. Light Sampling</h3>
 		<div style="display: flex; flex-direction: column; align-items: center;">
 			<table style="width: 100%; text-align: center; border-collapse: collapse;">
 			  <tr>
 				<td style="text-align: center;">
-				  <img src="images/CBbunny_H_64_32.png" width="400px"/>
-				  <figcaption>CBbunny.dae — hemisphere sampling (64 samples)</figcaption>
+				  <img src="docs/images/part3_cbunny_hemi_1spp_16l.png" width="300px"/>
+				  <figcaption>CBbunny.dae - hemisphere sampling (1 spp, 16 hemi samples)</figcaption>
 				</td>
 				<td style="text-align: center;">
-				  <img src="images/CBbunny_16_8.png" width="400px"/>
-				  <figcaption>CBbunny.dae — importance sampling (16 light samples)</figcaption>
+				  <img src="docs/images/part3_cbunny_light_1spp_16l.png" width="300px"/>
+				  <figcaption>CBbunny.dae - light sampling (1 spp, 16 light samples)</figcaption>
 				</td>
 			  </tr>
 			</table>
 		</div>
 
-		<h2>Part 4: Global Illumination</h2>
-		<p>
-			Global illumination combines direct lighting with indirect light from multiple bounces. We compute the one-bounce term explicitly and then recursively sample the BSDF to estimate the indirect term, using Russian roulette after a few bounces to keep the estimator unbiased while bounding runtime. The result captures soft interreflection, color bleeding, and brighter shadowed regions compared to direct-only lighting.
-		</p>
+		<h3>Soft Shadow Noise vs. Light Samples</h3>
+		<p>All renders below use 1 sample per pixel and light sampling.</p>
 		<div style="display: flex; flex-direction: column; align-items: center;">
 			<table style="width: 100%; text-align: center; border-collapse: collapse;">
 			  <tr>
 				<td style="text-align: center;">
-				  <img src="images/spheres.png" width="400px"/>
-				  <figcaption>CBspheres.dae — multi-bounce indirect light</figcaption>
+				  <img src="docs/images/part3_cbunny_light_l1.png" width="220px"/>
+				  <figcaption>-l 1</figcaption>
 				</td>
 				<td style="text-align: center;">
-				  <img src="images/bunny.png" width="400px"/>
-				  <figcaption>CBbunny.dae — indirect bounce adds soft fill light</figcaption>
+				  <img src="docs/images/part3_cbunny_light_l4.png" width="220px"/>
+				  <figcaption>-l 4</figcaption>
 				</td>
+				<td style="text-align: center;">
+				  <img src="docs/images/part3_cbunny_light_l16.png" width="220px"/>
+				  <figcaption>-l 16</figcaption>
+				</td>
+				<td style="text-align: center;">
+				  <img src="docs/images/part3_cbunny_light_l64.png" width="220px"/>
+				  <figcaption>-l 64</figcaption>
+				</td>
+			  </tr>
+			</table>
+		</div>
+
+		<p>
+			Light sampling consistently produces cleaner soft shadows than hemisphere sampling at the same budget because it concentrates samples on the light. As we increase <code>-l</code>, variance in penumbrae drops rapidly; by 64 light samples the shadow edges are smooth and the noise is largely confined to the bunny's glossy highlights. Hemisphere sampling wastes many samples in directions that contribute little radiance, so it converges much more slowly.
+		</p>
+
+		<h2>Part 4: Global Illumination</h2>
+		<p>
+			Global illumination adds indirect lighting by recursively sampling the BSDF and estimating the incoming radiance at each bounce. We compute the direct term via light sampling and then add indirect contributions using Russian roulette to keep the estimator unbiased while limiting depth.
+		</p>
+
+		<h3>Global Illumination (1024 spp)</h3>
+		<div style="display: flex; flex-direction: column; align-items: center;">
+			<table style="width: 100%; text-align: center; border-collapse: collapse;">
+			  <tr>
+				<td style="text-align: center;">
+				  <img src="docs/images/part4_cbunny_global_1024.png" width="300px"/>
+				  <figcaption>CBbunny.dae - global illumination</figcaption>
+				</td>
+				<td style="text-align: center;">
+				  <img src="docs/images/part4_CBspheres_global_1024.png" width="300px"/>
+				  <figcaption>CBspheres.dae - global illumination</figcaption>
+				</td>
+			  </tr>
+			</table>
+		</div>
+
+		<h3>Direct vs. Indirect Only (1024 spp)</h3>
+		<div style="display: flex; flex-direction: column; align-items: center;">
+			<table style="width: 100%; text-align: center; border-collapse: collapse;">
+			  <tr>
+				<td style="text-align: center;">
+				  <img src="docs/images/part4_cbunny_direct_1024.png" width="300px"/>
+				  <figcaption>Direct only</figcaption>
+				</td>
+				<td style="text-align: center;">
+				  <img src="docs/images/part4_cbunny_indirect_1024.png" width="300px"/>
+				  <figcaption>Indirect only</figcaption>
+				</td>
+			  </tr>
+			</table>
+		</div>
+
+		<h3>Unaccumulated Bounces (CBbunny, 1024 spp)</h3>
+		<div style="display: flex; flex-direction: column; align-items: center;">
+			<table style="width: 100%; text-align: center; border-collapse: collapse;">
+			  <tr>
+				<td><img src="docs/images/part4_cbunny_unaccum_m0.png" width="200px"/><figcaption>m=0</figcaption></td>
+				<td><img src="docs/images/part4_cbunny_unaccum_m1.png" width="200px"/><figcaption>m=1</figcaption></td>
+				<td><img src="docs/images/part4_cbunny_unaccum_m2.png" width="200px"/><figcaption>m=2</figcaption></td>
+			  </tr>
+			  <tr>
+				<td><img src="docs/images/part4_cbunny_unaccum_m3.png" width="200px"/><figcaption>m=3</figcaption></td>
+				<td><img src="docs/images/part4_cbunny_unaccum_m4.png" width="200px"/><figcaption>m=4</figcaption></td>
+				<td><img src="docs/images/part4_cbunny_unaccum_m5.png" width="200px"/><figcaption>m=5</figcaption></td>
+			  </tr>
+			</table>
+		</div>
+
+		<h3>Accumulated Bounces (CBbunny, 1024 spp)</h3>
+		<div style="display: flex; flex-direction: column; align-items: center;">
+			<table style="width: 100%; text-align: center; border-collapse: collapse;">
+			  <tr>
+				<td><img src="docs/images/part4_cbunny_accum_m0.png" width="200px"/><figcaption>m=0</figcaption></td>
+				<td><img src="docs/images/part4_cbunny_accum_m1.png" width="200px"/><figcaption>m=1</figcaption></td>
+				<td><img src="docs/images/part4_cbunny_accum_m2.png" width="200px"/><figcaption>m=2</figcaption></td>
+			  </tr>
+			  <tr>
+				<td><img src="docs/images/part4_cbunny_accum_m3.png" width="200px"/><figcaption>m=3</figcaption></td>
+				<td><img src="docs/images/part4_cbunny_accum_m4.png" width="200px"/><figcaption>m=4</figcaption></td>
+				<td><img src="docs/images/part4_cbunny_accum_m5.png" width="200px"/><figcaption>m=5</figcaption></td>
+			  </tr>
+			</table>
+		</div>
+
+		<p>
+			The 2nd bounce adds soft "fill" from light reflecting off the walls into shadowed regions, while the 3rd bounce further smooths gradients and introduces subtle color bleeding. Compared to rasterization, these higher-order bounces capture energy transport between surfaces that raster pipelines typically approximate with ambient terms.
+		</p>
+
+		<h3>Russian Roulette (CBbunny, 1024 spp)</h3>
+		<div style="display: flex; flex-direction: column; align-items: center;">
+			<table style="width: 100%; text-align: center; border-collapse: collapse;">
+			  <tr>
+				<td><img src="docs/images/part4_cbunny_accum_m0.png" width="200px"/><figcaption>m=0</figcaption></td>
+				<td><img src="docs/images/part4_cbunny_accum_m1.png" width="200px"/><figcaption>m=1</figcaption></td>
+				<td><img src="docs/images/part4_cbunny_accum_m2.png" width="200px"/><figcaption>m=2</figcaption></td>
+			  </tr>
+			  <tr>
+				<td><img src="docs/images/part4_cbunny_accum_m3.png" width="200px"/><figcaption>m=3</figcaption></td>
+				<td><img src="docs/images/part4_cbunny_accum_m4.png" width="200px"/><figcaption>m=4</figcaption></td>
+				<td><img src="docs/images/part4_cbunny_rr_m100.png" width="200px"/><figcaption>m=100 (RR)</figcaption></td>
+			  </tr>
+			</table>
+		</div>
+
+		<p>
+			Russian roulette keeps the estimator unbiased while cutting off long paths probabilistically. Increasing <code>max_ray_depth</code> to 100 produces a converged image without exploding render time because many paths terminate early.
+		</p>
+
+		<h3>Samples per Pixel (CBbunny, -l 4)</h3>
+		<p>
+			We fix the number of light samples to 4 and vary spp. Noise falls roughly with the square root of the sample count, and fine indirect shadowing emerges only at higher spp.
+		</p>
+		<div style="display: flex; flex-direction: column; align-items: center;">
+			<table style="width: 100%; text-align: center; border-collapse: collapse;">
+			  <tr>
+				<td><img src="docs/images/part4_cbunny_spp1.png" width="180px"/><figcaption>1</figcaption></td>
+				<td><img src="docs/images/part4_cbunny_spp2.png" width="180px"/><figcaption>2</figcaption></td>
+				<td><img src="docs/images/part4_cbunny_spp4.png" width="180px"/><figcaption>4</figcaption></td>
+				<td><img src="docs/images/part4_cbunny_spp8.png" width="180px"/><figcaption>8</figcaption></td>
+			  </tr>
+			  <tr>
+				<td><img src="docs/images/part4_cbunny_spp16.png" width="180px"/><figcaption>16</figcaption></td>
+				<td><img src="docs/images/part4_cbunny_spp64.png" width="180px"/><figcaption>64</figcaption></td>
+				<td><img src="docs/images/part4_cbunny_global_1024.png" width="180px"/><figcaption>1024</figcaption></td>
 			  </tr>
 			</table>
 		</div>
 
 		<h2>Part 5: Adaptive Sampling</h2>
 		<p>
-			Adaptive sampling tracks the running mean and variance of pixel estimates and stops early when the confidence interval is below a target tolerance. This concentrates samples in noisy regions while saving work in smooth areas. The sampling rate visualization highlights where the renderer spent effort: edges, glossy highlights, and indirect shadow boundaries.
+			Adaptive sampling monitors the running mean and variance of the pixel estimator in batches and stops early once the confidence interval (based on variance and <code>maxTolerance</code>) is below a target threshold. We used <code>samplesPerBatch = 32</code>, <code>maxTolerance = 0.05</code>, a cap of 2048 spp, 1 light sample, and max ray depth 5. This focuses computation on high-variance regions while preserving quality in smooth areas.
 		</p>
 		<div style="display: flex; flex-direction: column; align-items: center;">
 			<table style="width: 100%; text-align: center; border-collapse: collapse;">
 			  <tr>
 				<td style="text-align: center;">
-				  <img src="images/bunny.png" width="400px"/>
-				  <figcaption>CBbunny.dae — final render</figcaption>
+				  <img src="docs/images/part5_cbunny_adaptive.png" width="300px"/>
+				  <figcaption>CBbunny.dae - final render (2048 spp cap)</figcaption>
 				</td>
 				<td style="text-align: center;">
-				  <img src="images/bunny_rate.png" width="400px"/>
-				  <figcaption>CBbunny.dae — adaptive sampling rate map</figcaption>
+				  <img src="docs/images/part5_cbunny_adaptive_rate.png" width="300px"/>
+				  <figcaption>CBbunny.dae - sampling rate map</figcaption>
+				</td>
+			  </tr>
+			  <tr>
+				<td style="text-align: center;">
+				  <img src="docs/images/part5_CBspheres_adaptive.png" width="300px"/>
+				  <figcaption>CBspheres.dae - final render (2048 spp cap)</figcaption>
+				</td>
+				<td style="text-align: center;">
+				  <img src="docs/images/part5_CBspheres_adaptive_rate.png" width="300px"/>
+				  <figcaption>CBspheres.dae - sampling rate map</figcaption>
 				</td>
 			  </tr>
 			</table>
 		</div>
 
-		<h2>(Optional) Part 6: Extra Credit Opportunities</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-		
-		<h2>Additional Notes (please remove)</h2>
-		<ul>
-			<li>You can also add code if you'd like as so: <code>code code code</code></li>
-			<li>If you'd like to add math equations, 
-				<ul>
-					<li>You can write inline equations like so: \( a^2 + b^2 = c^2 \)</li>
-					<li>You can write display equations like so: \[ a^2 + b^2 = c^2 \]</li>
-				</ul>
-			</li>
-		</ul>
+		<h2>Extra Credit</h2>
+		<p>We did not complete any extra credit items for this assignment.</p>
+
+		<h2>Collaboration</h2>
+		<p>
+			We worked collaboratively by splitting up debugging tasks (intersection/BVH vs. sampling/lighting) and checking each other's renders for correctness and noise issues. Pairing on the harder bugs helped us converge faster, and comparing outputs made it easier to spot subtle errors.
+		</p>
 		</div>
 	</body>
 </html>

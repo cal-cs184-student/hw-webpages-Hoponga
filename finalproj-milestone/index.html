@@ -1,0 +1,117 @@
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=default'></script>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+		<style>
+			h1 {
+				text-align: center;
+			}
+
+			.container {
+				margin: 0 auto;
+				padding: 60px 20%;
+			}
+
+			figure {
+				text-align: center;
+			}
+
+			img {
+				display: inline-block;
+			}
+
+			body {
+				font-family: 'Inter', sans-serif;
+			}
+
+			table {
+				border-collapse: collapse;
+				width: 100%;
+			}
+
+			th, td {
+				padding: 6px 12px;
+				text-align: left;
+				border: 1px solid #ccc;
+			}
+
+			th {
+				background: #f5f5f5;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+		<h1>CS184 Final Project Milestone</h1>
+		<div style="text-align: center;">Core-Collapse Supernova Simulator</div>
+
+		<br>
+
+		
+
+		<h2>Project overview</h2>
+		<p>
+			We're building a supernova (star core-collapse) simulator with offline rendering, with the final goal being to render a visually convincing simulation of the key stages of a supernova, including shock launch, shock stall, delayed neutrino-driven revival, buoyant plume formation, and asymmetric shock breakout. 
+		</p>
+
+		<h2>Project update</h2>
+		What we've implemented so far: 
+
+		<h3>2D reduced-physics solver</h3>
+		<p>
+			The foundation of our simulator is a 2D post-bounce model involving: 
+		</p>
+		<ul>
+			<li>A stalled shock that revives on a delayed timescale driven by gain-region heating</li>
+			<li>Inner cooling near the proto-neutron star surface and heating in the gain region above it</li>
+			<li>Buoyancy-driven plumes seeded by angular perturbations</li>
+			<li>Low-mode asymmetry (dipole + quadrupole) that ramps in over time</li>
+		</ul>
+		<p>
+			Tracer particles track ejecta motion and make the outflow structure easier to read in rendered frames.
+		</p>
+
+		<h3>3D extension</h3>
+		<p>
+			Our extension into 3D (with our ultimate goal being to have a live rendering that you can pan through) required us to refactor the solver to work in arbitrary dimensions. 
+		</p>
+		<ul>
+			<li>Volumetric dipole and quadrupole asymmetry forcing (not just 2D patterns extruded through z)</li>
+			<li>A tangential swirl field in the gain and shock region</li>
+			<li>Orthogonal xy, xz, yz slice insets for debugging</li>
+			<li>A pseudo-volumetric "hero" projection that composites emissive slices front-to-back with a depth-parallax shift &mdash; not physically correct volume rendering, but looks much more like a volumetric event than raw slices</li>
+		</ul>
+
+		
+		<h2>Current results</h2>
+		<p>
+			The 2D baseline produces stable runs with visible shock stall, gain-region heating, and asymmetric plume growth. The 3D hero preset shows convincing early asymmetry from the dipole/swirl forcing, though late-time morphology still smooths out too much 
+		</p>
+
+		<div style="display: flex; gap: 24px; justify-content: center; align-items: flex-start; flex-wrap: wrap; margin: 24px 0;">
+			<figure style="margin: 0;">
+				<img src="frame_0060.png" style="width: 340px;" alt="2D baseline frame at t=0.72s showing asymmetric stalled shock"/>
+				<figcaption>sample 2d generation</figcaption>
+			</figure>
+		</div>
+
+		<h2>Remaining work</h2>
+		<p>
+			The remaining work involves implementing a full 3D camera with some sort of user interactivity (most likely using three.js) and tuning the solver to maintain more distinct plume structure at late times. 
+
+			Having access to more compute (8xH100s from our research projects), we are interested in exploring more high-resolution simulations with more tracer particles. 
+		</p>
+
+		<h2>References</h2>
+		<ul>
+			<li>Burrows &amp; Vartanyan, <a href="https://www.nature.com/articles/s41586-020-03059-w">"Core-collapse supernova explosion theory"</a>, <em>Nature</em>, 2021.</li>
+			<li>Burrows et al., <a href="https://link.springer.com/article/10.1007/s11214-017-0450-9">"Crucial Physical Dependencies of the Core-Collapse Supernova Mechanism"</a>, <em>Space Science Reviews</em>, 2018.</li>
+			<li>Janka, <a href="https://doi.org/10.1146/annurev-nucl-102711-094901">"Explosion Mechanisms of Core-Collapse Supernovae"</a>, <em>Annual Review of Nuclear and Particle Science</em>, 2012.</li>
+			<li>M&uuml;ller, <a href="https://link.springer.com/article/10.1007/s41115-020-0008-5">"Hydrodynamics of core-collapse supernovae and their progenitors"</a>, <em>Living Reviews in Computational Astrophysics</em>, 2020.</li>
+			<li>Mezzacappa et al., <a href="https://link.springer.com/article/10.1007/s41115-020-00010-8">"Physical, numerical, and computational challenges of modeling neutrino transport in core-collapse supernovae"</a>, <em>Living Reviews in Computational Astrophysics</em>, 2020.</li>
+		</ul>
+
+		</div>
+	</body>
+</html>
