@@ -157,7 +157,7 @@
 
       <h2>Overview</h2>
       <p>
-        In this homework, I built a real-time cloth simulation from a grid of
+        In this homework, we built a real-time cloth simulation from a grid of
         point masses and springs. The cloth starts as a flat set of particles.
         Springs connect nearby particles, gravity pulls the particles downward,
         and each simulation step updates the particles using Verlet integration.
@@ -167,15 +167,15 @@
         without checking every pair of particles.
       </p>
       <p>
-        The main idea I learned is that cloth behavior comes from many small
+        The main idea we learned is that cloth behavior comes from many small
         local rules working together. No single particle knows what the whole
         cloth should look like. Each particle only responds to forces,
         constraints, and collisions near it. When all of those local updates
         happen every frame, the result looks like a flexible sheet.
       </p>
       <p>
-        I also implemented several GLSL shaders. These shaders move lighting and
-        material calculations onto the GPU. The vertex shader prepares
+        We also implemented several GLSL shaders. These shaders move lighting
+        and material calculations onto the GPU. The vertex shader prepares
         per-vertex data such as position, normal, tangent, and texture
         coordinate. The fragment shader then uses interpolated versions of those
         values to decide the color of each visible point on the cloth or sphere.
@@ -183,7 +183,7 @@
 
       <h2>Part 1: Masses and Springs</h2>
       <p>
-        I represented the cloth as a regular grid of point masses. For a
+        We represented the cloth as a regular grid of point masses. For a
         horizontal cloth, the grid lies in the xz-plane with a fixed y value of
         1. For a vertical cloth, the grid lies in the xy-plane, with a very
         small random z offset so that the cloth does not start as a perfectly
@@ -192,7 +192,7 @@
         the second row, and so on.
       </p>
       <p>
-        After creating the masses, I added three kinds of springs. Structural
+        After creating the masses, we added three kinds of springs. Structural
         springs connect each mass to the mass directly left and directly above
         it. Shearing springs connect diagonal neighbors. Bending springs connect
         masses that are two steps apart horizontally or vertically. Structural
@@ -232,23 +232,23 @@
       <h2>Part 2: Simulation via Numerical Integration</h2>
       <p>
         Each simulation step starts by clearing the force stored on every point
-        mass. I then add the external force from gravity using \(F = ma\). After
-        that, I loop through the springs and apply Hooke's law. If a spring is
-        longer than its rest length, it pulls its endpoints toward each other.
-        If it is shorter, it pushes them apart. I used a smaller spring constant
-        for bending springs so that bending is softer than stretching or
-        shearing.
+        mass. We then add the external force from gravity using \(F = ma\).
+        After that, we loop through the springs and apply Hooke's law. If a
+        spring is longer than its rest length, it pulls its endpoints toward
+        each other. If it is shorter, it pushes them apart. We used a smaller
+        spring constant for bending springs so that bending is softer than
+        stretching or shearing.
       </p>
       <p>
-        To update positions, I used Verlet integration. Instead of storing
+        To update positions, we used Verlet integration. Instead of storing
         velocity directly, Verlet estimates velocity from the difference between
         the current position and the previous position. The update is \[
         x_{t+\Delta t} = x_t + (1 - d)(x_t - x_{t-\Delta t}) + a_t\Delta t^2. \]
         Pinned points skip this update, so they stay fixed in place.
       </p>
       <p>
-        At the end of each step, I enforce the Provot constraint. If any spring
-        becomes more than 10 percent longer than its rest length, I move the
+        At the end of each step, we enforce the Provot constraint. If any spring
+        becomes more than 10 percent longer than its rest length, we move the
         endpoints closer together. If both endpoints can move, each gets half of
         the correction. If one endpoint is pinned, the unpinned endpoint gets
         the full correction.
@@ -313,20 +313,20 @@
 
       <h2>Part 3: Handling Collisions with Other Objects</h2>
       <p>
-        For sphere collisions, I check whether a point mass is inside or on the
-        sphere. If it is, I find the point on the sphere surface in the same
+        For sphere collisions, we check whether a point mass is inside or on the
+        sphere. If it is, we find the point on the sphere surface in the same
         direction from the center. That surface point is the target position the
-        point mass should have reached instead of going into the sphere. I then
+        point mass should have reached instead of going into the sphere. We then
         apply the correction from the previous position toward that target,
         scaled by \(1 - friction\), so friction reduces how far the point
         slides.
       </p>
       <p>
-        For plane collisions, I compare which side of the plane the point mass
+        For plane collisions, we compare which side of the plane the point mass
         was on last frame and which side it is on now. If the signs differ, the
-        point crossed the plane. I compute where the straight path between the
+        point crossed the plane. We compute where the straight path between the
         two positions intersects the plane, then place the point slightly above
-        the plane on the side it came from. I again scale the correction by \(1
+        the plane on the side it came from. We again scale the correction by \(1
         - friction\).
       </p>
 
@@ -372,16 +372,16 @@
       <p>
         A direct self-collision check would compare every point mass against
         every other point mass, which is too slow for real-time simulation.
-        Instead, I used spatial hashing. At the start of each step, I divide
+        Instead, we used spatial hashing. At the start of each step, we divide
         space into boxes and store each point mass in a hash table based on the
         box that contains it. Then each point mass only checks against other
         masses in the same box.
       </p>
       <p>
-        During self-collision, I check whether another point mass is closer than
-        twice the cloth thickness. If two masses are too close, I compute a
-        correction that would separate them to exactly that distance. A point
-        may have several nearby neighbors, so I average all of the correction
+        During self-collision, we check whether another point mass is closer
+        than twice the cloth thickness. If two masses are too close, we compute
+        a correction that would separate them to exactly that distance. A point
+        may have several nearby neighbors, so we average all of the correction
         vectors and divide by the number of simulation steps. This keeps the
         correction from being too sudden.
       </p>
@@ -447,7 +447,7 @@
       <h3>Diffuse and Blinn-Phong Shading</h3>
       <p>
         Diffuse shading models a matte surface. A surface is brightest when it
-        faces the light directly and darkest when it faces away. I compute this
+        faces the light directly and darkest when it faces away. We compute this
         with the dot product between the surface normal and the direction to the
         light.
       </p>
@@ -493,7 +493,7 @@
 
       <h3>Texture Mapping</h3>
       <p>
-        For texture mapping, I used the interpolated UV coordinate to sample a
+        For texture mapping, we used the interpolated UV coordinate to sample a
         2D texture. The sampled texture color becomes the output color of the
         fragment. This lets the same cloth mesh display detailed color variation
         without adding more geometry.
@@ -513,9 +513,9 @@
       <h3>Bump and Displacement Mapping</h3>
       <p>
         Bump mapping changes the normal used for lighting, but it does not move
-        the actual vertices. I sampled nearby values in the height map to
+        the actual vertices. We sampled nearby values in the height map to
         estimate how the surface height changes in the \(u\) and \(v\)
-        directions. Those changes define a new local normal, which I transform
+        directions. Those changes define a new local normal, which we transform
         into world space using the tangent, bitangent, and normal basis.
       </p>
       <p>
@@ -584,7 +584,7 @@
 
       <h3>Custom Shader</h3>
       <p>
-        I made a custom shader that combines texture color, a procedural stripe
+        We made a custom shader that combines texture color, a procedural stripe
         pattern, Blinn-Phong lighting, and a small amount of cubemap reflection.
         The goal was to make a material that still responds to light like cloth,
         but has more visual variation than a plain color.
@@ -598,7 +598,7 @@
 
       <h2>Extra Credit</h2>
       <p>
-        I completed the optional custom shader described above. I did not
+        We completed the optional custom shader described above. We did not
         implement extra cloth simulation features beyond the required collision,
         self-collision, and shader tasks.
       </p>
