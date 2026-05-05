@@ -13,6 +13,7 @@
 
       .container {
         margin: 0 auto;
+        max-width: 1100px;
         padding: 60px 8%;
       }
 
@@ -26,6 +27,11 @@
 
       body {
         font-family: "Inter", sans-serif;
+        color: #222;
+      }
+
+      p {
+        line-height: 1.58;
       }
 
       table {
@@ -61,6 +67,31 @@
         text-align: center;
         margin: 24px 0;
       }
+
+      .todo-image {
+        border: 1px dashed #aaa;
+        border-radius: 6px;
+        background: #fafafa;
+        color: #333;
+        padding: 18px 22px;
+        margin: 22px auto;
+        max-width: 820px;
+        text-align: center;
+      }
+
+      .todo-image strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .todo-image span {
+        color: #666;
+        font-size: 0.95rem;
+      }
+
+      .contributions li {
+        margin-bottom: 10px;
+      }
     </style>
   </head>
   <body>
@@ -75,298 +106,360 @@
 
       <h2>Abstract</h2>
       <p>
-        We built a core-collapse supernova simulator that you can actually watch
-        explode. The idea was to model all the main stages of a supernova — the
-        shock launching outward after the star's core collapses, the shock
-        stalling partway out, neutrino heating kicking it back into motion,
-        hot buoyant plumes rising asymmetrically, and finally the star breaking
-        apart. We wrote the whole simulator from scratch in Python, starting
-        with a 2D version and then extending it to 3D. For the visuals we built
-        a rendering pipeline that composites the fluid fields into false-color
-        images for 2D and a pseudo-volumetric projection with depth and lighting
-        cues for 3D. On top of that, as a stretch goal we made a browser-based
-        interactive viewer in Three.js where you can orbit the simulation, scrub
-        through time, and switch between a raymarched volume view and particle
-        views of the ejecta. The final result is something that actually looks
-        like the supernova visualizations you see in research papers.
+        Our project was to make a supernova simulator with offline rendering.
+        We wanted to show the main post-bounce stages. Post-bounce
+        means after the star's core has collapsed and rebounded, launching a
+        shockwave outward. The shock launches, stalls, gets revived by neutrino
+        heating, forms hot plumes, and finally breaks out unevenly. Neutrino
+        heating is basically energy from tiny particles called neutrinos getting
+        deposited back into the star fluid. Plumes are hot blobs of fluid that
+        rise outward, kind of like bubbles in boiling water. We started with the
+        2D simulator from our milestone and then moved it to 3D. We also made a
+        small browser viewer as a stretch goal, so you can rotate around the
+        saved simulation and scrub through time. The main thing we wanted was a
+        stalled shock that turns into a messy-looking explosion, and that is
+        what the final simulator shows.
       </p>
+
+      <div class="todo-image">
+        <strong>TODO image/video</strong>
+        <span>
+          Add the best final 3D animation still or an embedded video here, so
+          the first thing people see is the actual supernova output.
+        </span>
+      </div>
 
       <h2>Technical Approach</h2>
 
       <h3>The Physics Model</h3>
       <p>
-        A real supernova simulation requires solving neutrino transport through
-        a collapsing star with a nuclear equation of state — the kind of thing
-        that takes dedicated supercomputers months to run. That wasn't our goal.
-        We wanted something that captures the <em>look</em> of a supernova, so
-        we built what we call a "reduced model": a fluid simulation that
-        includes the most important physical ingredients without any of the
-        hardcore astrophysics machinery.
+        Like we said in the milestone, supernova dynamics and high energy
+        physics were pretty new to us. We read a bunch of papers and then
+        settled on a post-bounce model. Basically, we do a fluid simulation
+        where the center acts like a proto-neutron star, which is the tiny dense
+        object left in the middle right after collapse. We start after the shock
+        has already launched. The part we care about is after bounce, where the
+        shock, heating, cooling, and plumes matter.
       </p>
       <p>
-        The state we track at each timestep is a density field, an entropy
-        field, a velocity field, and a bunch of tracer particles. The tracers
-        are basically massless test particles we sprinkle into the fluid to
-        visualize where the material is going — they don't affect the physics,
-        they just tag along with the flow so we can see the ejecta pattern.
-        The whole grid is a cube (or square in 2D) with the proto-neutron star
-        implicitly sitting at the center — we don't simulate the collapse itself,
-        just everything after the shock has launched.
+        In any dynamical simulation, we have state that gets updated each
+        timestep. In our case, the main state is the density field, entropy
+        field, velocity field, and tracer positions. Density is how much
+        material is there, entropy is a rough way to track how hot/energetic the
+        material is, and velocity is how fast it is moving and in what direction.
+        The tracers are basically marker particles that exist to show the flow
+        of the star fluid. They ride along with the velocity field so we can see
+        where material is going.
       </p>
       <p>
-        The shock radius has a prescribed trajectory: it expands quickly at
-        first, stalls partway out (around radius 0.27 in our normalized units),
-        hangs there for a bit, and then revives and keeps growing. This mirrors
-        the real "delayed neutrino-driven explosion mechanism" that most current
-        supernova research is focused on. We hardcode this trajectory using a
-        smooth step function, and the actual shock in the simulation relaxes
-        toward it each step rather than snapping. In 3D, the shock surface also
-        gets locally deformed by the entropy structure, so it looks lumpy and
-        asymmetric rather than a perfect sphere.
+        The way we simulate the shock is still similar to the milestone version.
+        The shock is the outward-moving pressure wave that starts the explosion.
+        We hardcode the rough shock radius over time, where the radius is just
+        how far the shock is from the center. It grows outward, stalls for a
+        bit, and then keeps going after the revival. This comes from the delayed
+        neutrino-driven explosion mechanism that a lot of supernova papers talk
+        about. The shock first loses steam, then neutrino heating helps it start
+        moving outward again. In 3D, we also let the entropy field deform the
+        shock surface locally, which gives the shock a much more uneven shape.
       </p>
       <p>
-        Heating and cooling work through spatial masks. There's a "gain region"
-        between the shock and an inner gain radius (about 52% of the shock
-        radius) where neutrino heating dominates — we add entropy there each
-        step, weighted by an angular pattern so some directions get more heating
-        than others. Just inside the gain radius there's a cooling zone where
-        entropy is removed. This entropy source/sink is the main driver of the
-        explosion: hot material rises buoyantly, pushing the shock outward
-        asymmetrically.
+        The shock shell is the thin area around the shock surface. It divides
+        the grid into different regions. Outside the shock, the fluid evolves
+        with the normal fluid update. Near the shock and gain region, we add
+        heating to represent neutrino energy being deposited back into the star
+        fluid. The gain region is the area where the fluid gains energy from
+        neutrino heating. Closer to the center, we remove some entropy to
+        represent cooling. The heating also varies by angle, which helps break
+        the symmetry and makes the plumes more interesting.
       </p>
       <p>
-        The velocity update combines a few forces: inward gravity (stronger near
-        the center), a buoyancy force based on how much hotter a cell is than
-        its neighbors in the gain region, an outward push from the shock shell
-        itself, and in 3D a late-time outflow boost along a preferred axis that
-        creates the bipolar jet-like structure seen in some supernova models.
-        We also add a swirl force in 3D perpendicular to the radial direction,
-        which produces the spiral vorticity associated with the standing
-        accretion shock instability (SASI).
+        The velocity update has a few main forces. We have inward gravity from
+        the center, buoyancy from hot high-entropy fluid, a shock push around
+        the shock shell, and in 3D a swirl/outflow term that bends the flow away
+        from being purely radial. Buoyancy is the same idea as hot air rising,
+        and high-entropy fluid is our hot energetic fluid. Radial means straight
+        outward from the center. The buoyancy part is important because it is
+        what makes hot plumes rise and push the shock into those uneven shapes.
       </p>
+
+      <div class="todo-image">
+        <strong>TODO diagram</strong>
+        <span>
+          Add a simple labeled diagram of the core, gain region, shock shell,
+          and plume direction. This would make the physics explanation easier to
+          follow.
+        </span>
+      </div>
+
       <p>
-        For moving the density and entropy fields forward in time we use
-        semi-Lagrangian advection — basically, for each grid cell you trace
-        backward along the velocity for one timestep and sample whatever value
-        was there. The nice thing about this is that it's unconditionally stable,
-        so we can take larger timesteps without things blowing up. Tracer
-        particles are moved by sampling the velocity at their location and
-        integrating with a simple Euler step, with a little drag each step to
-        keep them following the fluid instead of flying off.
+        For moving density and entropy forward, we use semi-Lagrangian
+        advection. The basic idea is that for each grid cell, we look backward
+        along the velocity field and sample the old value from there. Advection
+        means carrying stuff along with the flow. Semi-Lagrangian is the
+        backwards lookup trick that makes the update stable. The tracer
+        particles are moved by sampling the velocity where they are and taking a
+        simple Euler step.
       </p>
 
       <h3>Going from 2D to 3D</h3>
       <p>
-        We designed the simulator to work in both 2D and 3D from the start,
-        which turned out to be a really good call. All the fields are stored as
-        component-stacked arrays that work the same way regardless of dimension,
-        and the advection and interpolation routines just loop over axes. This
-        meant we could debug everything quickly in 2D (which runs much faster)
-        and then just flip a flag to run in 3D.
+        We originally settled for a 2D fluid simulation, imagining the star as a
+        cylinder and the shockwave as a circle expanding outwards. That was much
+        easier to debug, so we kept using 2D as our quick test case. Once that
+        worked, we moved the same ideas to 3D by making the arrays and advection
+        routines work for either dimension.
       </p>
       <p>
-        The 3D version adds a few things the 2D one doesn't have: a preferred
-        symmetry axis that you can tilt and rotate, a random asymmetry axis
-        blended toward it, and a swirl axis for rotation. There's also a
-        "plume seed" — a deterministic spatial noise pattern made from several
-        sine waves at different frequencies that we use to seed variation in
-        the shock surface. This gives us repeatable asymmetric plume shapes
-        without adding random noise every run.
+        The 3D version adds a few extra controls: a preferred direction for the
+        explosion, a swirl direction, and a deterministic plume seed. The plume
+        seed is a fixed pattern made from sine waves. Since it is deterministic,
+        the same settings make the same seed every time. It gives the shock
+        small bumps that grow into repeatable asymmetric plumes.
       </p>
+
+      <div class="todo-image">
+        <strong>TODO image</strong>
+        <span>
+          Add a side-by-side 2D frame and 3D frame here to show how the same
+          simulator idea changed when we moved from a circle to a full 3D
+          volume.
+        </span>
+      </div>
 
       <h3>Rendering</h3>
       <p>
-        For 2D we blend four false-color channels into one composite image:
-        log-density, entropy, heating, and the entropy gradient (which lights
-        up plume boundaries). Each channel uses a different colormap — entropy
-        goes through <em>inferno</em> (red/orange/yellow), heating through
-        <em>turbo</em> (blue/green), and so on. We normalize each channel
-        using percentile-based bounds rather than min/max so that a few
-        extremely hot cells don't wash out everything else. The shock location
-        gets drawn as a white contour on top, and the tracer particles are
-        scattered across as small dots.
+        For 2D rendering, we combine a few fields into one image. Entropy gives
+        the red/yellow hot-looking colors, heating adds blue/green, and entropy
+        gradients make the plume boundaries pop. A gradient shows how quickly a
+        value changes from one place to the next, so entropy gradients show the
+        edges between hot plumes and the surrounding material. We also draw the
+        shock as a white outline and scatter the tracer particles on top. This
+        is basically the same style as the milestone frames, with cleaner colors
+        and more consistent scaling.
       </p>
       <p>
-        For 3D we built a pseudo-volumetric renderer. The idea is to go through
-        the 3D grid from back to front, composite each depth slice onto a
-        canvas with alpha blending, and shift each slice slightly in screen
-        space based on depth to create a sense of perspective. Each voxel gets
-        a color and opacity based on its entropy, heating, and entropy gradient
-        — we specifically avoid making dense material opaque, because early on
-        we did that and the whole image just turned into a featureless glowing
-        sphere. The interesting structure is in the plumes and the shock surface,
-        so those are what we gate the opacity on. After compositing everything,
-        we run a screen-space pass that adds silhouette rim lighting, near/far
-        tint separation (warm foreground, cool background), and a subtle haze.
-        A procedural star field and vignette round out the look.
+        For 3D rendering, we stack slices of the 3D grid from back to front and
+        blend them onto the image. At first we made dense regions opaque, but
+        that looked terrible because it became one smooth glowing ball. What
+        actually looks good is showing the plume edges, the heated region, and
+        the shock shell. After that, we add some rim lighting around the edge,
+        plus color tinting and a star field so the final frames are easier to
+        read.
       </p>
+
+      <div class="todo-image">
+        <strong>TODO image</strong>
+        <span>
+          Add a rendering comparison here, like density-only versus final
+          plume/shock rendering, because that explains why the final images look
+          better.
+        </span>
+      </div>
+
       <p>
-        The camera orbits the domain along one of three paths — a slow orbit,
-        a tight fly-in, and a wide reveal. One thing we had to be careful about:
-        when only rendering every 4th simulation step, the camera phase has to
-        advance by the <em>output frame count</em>, not the raw step count.
-        We got bit by this early on and ended up with visible jumps in the video
-        every time we assembled frames with ffmpeg.
+        We also added camera paths for videos. One annoying bug was that the
+        camera used the raw solver step even though we saved every 4th frame. So
+        the camera would randomly jump in the video. The fix was to move the
+        camera based on the output frame number instead.
       </p>
 
       <h3>Interactive Web Viewer</h3>
       <p>
-        As a stretch goal we built a browser-based viewer using Three.js. We
-        export precomputed simulation snapshots to a JSON file containing 3D
-        volume textures, tracer positions, and shock mesh points, then the
-        viewer loads those and renders them in real time. The volume is rendered
-        with a GLSL raymarching shader on a cube mesh; the plume ejecta show up
-        as soft-disc particle sprites; the shock is a smooth mesh. Between saved
-        timesteps, the shader interpolates between adjacent 3D textures so the
-        playback looks smooth even though we only saved 25 frames. You can
-        freely orbit the scene with the mouse, scrub through time with a slider,
-        and switch between a volume view, a particle view, and a tracer ejecta
-        view. There's also a little orientation gizmo in the corner that tracks
-        the camera.
+        As a stretch goal, we made a Three.js viewer. We export saved snapshots
+        to JSON and load them in the browser. You can rotate around the result,
+        move through time with a slider, and switch between the volume-looking
+        view, plume particles, and tracer particles. It is a nicer way to
+        inspect the run than flipping through PNGs.
       </p>
+
+      <div class="todo-image">
+        <strong>TODO image</strong>
+        <span>
+          Add a screenshot of the Three.js viewer here once the final hosted
+          viewer is ready.
+        </span>
+      </div>
 
       <h3>Problems we ran into</h3>
       <p>
         <strong>Everything looked like a perfect sphere.</strong> Our first
-        working simulator produced a beautifully symmetric expanding shock and
-        absolutely nothing else interesting. All the forces were radially
-        symmetric so of course nothing broke that symmetry. We fixed this by
-        adding a low-order angular driving pattern — a mix of a mode-1 sinusoid
-        and a sloshing term — that ramps on after shock stall. In 3D we also
-        added dipole and quadrupole patterns along a tilted preferred axis and
-        the plume seed noise, which finally gave us the asymmetric blobs we
-        were going for.
+        working simulator made a clean expanding circle/sphere. That was neat
+        for about five seconds, but the supernova needed more structure. All of
+        our forces were radial, so of course nothing interesting happened. We
+        fixed this by adding angular heating patterns and plume seeds so some
+        parts of the shock get pushed more than others.
       </p>
       <p>
-        <strong>The 3D render looked like a glowing blob.</strong> Our first
-        attempt at the pseudo-volume renderer mapped opacity to density, which
-        made the whole thing look like a smooth orange sphere with nothing
-        inside. We had to completely rethink the transfer function to gate
-        opacity on physical features — entropy gradients at plume interfaces,
-        net heating in the gain region, and a thin band around the shock
-        surface. Once we did that, the internal structure immediately became
-        visible.
+        <strong>The 3D render looked like a glowing blob.</strong> Our first 3D
+        render made opacity depend on density. Opacity means how see-through
+        something is. This was a bad idea. The whole image turned into a smooth
+        orange ball, and all the actual plume detail disappeared. We changed
+        opacity to depend more on plume boundaries, heating, and the shock band,
+        which made the structure show up.
       </p>
       <p>
         <strong>Camera jumps in the video.</strong> We noticed that every time
-        we assembled an animation, there was a visible snap in the camera motion
-        somewhere around frame 76-80. Turned out the camera orbit phase was
-        using the raw solver step index, but we were only saving every 4th step,
-        so the phase was jumping by 4x too much per rendered frame. Fixing it
-        was a one-liner but took us an embarrassingly long time to diagnose.
+        we made a video, the camera snapped around frame 76 to 80. It took us a
+        while to figure out, but the issue was just that the camera was using
+        the wrong frame counter. It was using solver steps instead of saved
+        output frames.
       </p>
       <p>
-        <strong>Browser volume looked blocky.</strong> The first version of
-        the web viewer used a 56&sup3; texture for the raymarched volume, which
-        looked obviously pixelated on any screen. We bumped it up to 96&sup3;,
-        applied a light 3D blur to the opacity data before export, and added
-        per-fragment ray-start jitter in the shader to break up the remaining
-        Moiré patterns.
+        <strong>Browser volume looked blocky.</strong> The first version of the
+        web viewer used a 56&sup3; texture, and it looked pretty blocky. We
+        raised it to 96&sup3;, blurred the opacity data a little before export,
+        and added a small amount of shader jitter. That made it look a lot
+        closer to the offline frames.
       </p>
 
       <h3>Lessons learned</h3>
       <p>
-        Writing the solver to be dimension-agnostic from day one saved us a
-        huge amount of pain. We almost wrote separate 2D and 3D codepaths, and
-        that would have been a nightmare to keep in sync. Setting up named
-        presets and a batch runner early also paid off a lot — being able to
-        quickly run "baseline", "showcase", "explosive" and compare them in a
-        few minutes meant we could iterate on visual quality much faster than
-        if we were tweaking parameters by hand each time. On the rendering side,
-        the big lesson was that trying to visualize raw density is almost always
-        wrong for a simulator like this — the interesting physics is in the
-        entropy and heating structure, and you have to let that drive what's
-        visible. And honestly, building the interactive viewer pushed our final
-        quality much higher than it would have been otherwise, because it forced
-        us to fix issues (texture artifacts, choppy playback) that were
-        completely invisible in static PNG frames.
+        The biggest thing we learned is that writing the simulator in a general
+        enough way saved us a lot of time. We could debug fast in 2D and then
+        run the same idea in 3D. Presets also helped a ton because otherwise we
+        would have been manually changing numbers forever. On the rendering
+        side, we learned that raw density by itself is a bad visual cue.
+        Entropy, heating, and plume boundaries are much better for seeing what
+        is happening.
       </p>
 
       <h2>Results</h2>
 
       <h3>2D Baseline</h3>
       <p>
-        This is the 2D baseline run on a 192×192 grid. You can see the shock
-        launch at t=0, stall around t=0.72s, then start growing again as the
-        neutrino heating kicks in. By t=2.88s the asymmetric plume structure is
-        fully developed. Colors are entropy (red/yellow), heating (blue/green),
-        with plume boundaries highlighted by the entropy gradient.
+        This is our 2D baseline run on a 192x192 grid. You can see the shock
+        launch, stall around t=0.72s, and then start expanding again once the
+        heating kicks in. By the last frame, the plume structure is pretty clear.
+        Red/yellow is entropy, blue/green is heating, and the lighter edges are
+        plume boundaries.
       </p>
       <div class="figure-row">
         <figure>
-          <img src="images/baseline_frame_0000.png" style="width: 200px" alt="Baseline frame 0" />
-          <figcaption>t = 0 s — initial infall</figcaption>
+          <img
+            src="images/baseline_frame_0000.png"
+            style="width: 200px"
+            alt="Baseline frame 0"
+          />
+          <figcaption>t = 0 s, material falling inward</figcaption>
         </figure>
         <figure>
-          <img src="images/baseline_frame_0060.png" style="width: 200px" alt="Baseline frame 60" />
-          <figcaption>t = 0.72 s — stalled shock</figcaption>
+          <img
+            src="images/baseline_frame_0060.png"
+            style="width: 200px"
+            alt="Baseline frame 60"
+          />
+          <figcaption>t = 0.72 s, stalled shock</figcaption>
         </figure>
         <figure>
-          <img src="images/baseline_frame_0120.png" style="width: 200px" alt="Baseline frame 120" />
-          <figcaption>t = 1.44 s — shock revival</figcaption>
+          <img
+            src="images/baseline_frame_0120.png"
+            style="width: 200px"
+            alt="Baseline frame 120"
+          />
+          <figcaption>t = 1.44 s, shock revival</figcaption>
         </figure>
         <figure>
-          <img src="images/baseline_frame_0240.png" style="width: 200px" alt="Baseline frame 240" />
-          <figcaption>t = 2.88 s — late expansion</figcaption>
+          <img
+            src="images/baseline_frame_0240.png"
+            style="width: 200px"
+            alt="Baseline frame 240"
+          />
+          <figcaption>t = 2.88 s, late expansion</figcaption>
         </figure>
       </div>
       <div class="wide-figure">
-        <img src="images/baseline_diagnostics.png" style="width: 100%; max-width: 820px"
-             alt="2D baseline diagnostics overview" />
-        <p>Diagnostic plots for the baseline run. The top-left panel shows the shock stall and
-           revival clearly. The asymmetry panels at bottom-right show the low-order modes growing
-           during plume breakout.</p>
+        <img
+          src="images/baseline_diagnostics.png"
+          style="width: 100%; max-width: 820px"
+          alt="2D baseline diagnostics overview"
+        />
+        <p>
+          The diagnostics show the same thing in plot form. The shock radius
+          stalls and then revives, and the asymmetry plots grow as the plumes
+          break out.
+        </p>
       </div>
 
       <h3>3D Showcase</h3>
       <p>
-        The 3D showcase preset runs on a 72³ grid with a tilted preferred axis,
-        strong dipole asymmetry, swirl, and late-time bipolar outflow. The big
-        panel on the left is the pseudo-volumetric projection; the three small
-        panels are midplane slices (xy, xz, yz) for debugging.
+        This is the main 3D run we wanted to show. It runs on a 72&sup3; grid
+        and uses a tilted axis, stronger asymmetry, swirl, and late outflow. The
+        tilted axis is the direction the explosion prefers to stretch along. The
+        big panel is the 3D-looking render. The smaller panels are slices
+        through the grid, which helped us debug what was happening inside.
       </p>
       <div class="figure-row">
         <figure>
-          <img src="images/showcase_frame_0000.png" style="width: 280px" alt="3D showcase frame 0" />
+          <img
+            src="images/showcase_frame_0000.png"
+            style="width: 280px"
+            alt="3D showcase frame 0"
+          />
           <figcaption>t = 0 s</figcaption>
         </figure>
         <figure>
-          <img src="images/showcase_frame_0036.png" style="width: 280px" alt="3D showcase frame 36" />
-          <figcaption>t = 0.43 s — plume growth</figcaption>
+          <img
+            src="images/showcase_frame_0036.png"
+            style="width: 280px"
+            alt="3D showcase frame 36"
+          />
+          <figcaption>t = 0.43 s, plume growth</figcaption>
         </figure>
         <figure>
-          <img src="images/showcase_frame_0072.png" style="width: 280px" alt="3D showcase frame 72" />
-          <figcaption>t = 0.86 s — asymmetric breakout</figcaption>
+          <img
+            src="images/showcase_frame_0072.png"
+            style="width: 280px"
+            alt="3D showcase frame 72"
+          />
+          <figcaption>t = 0.86 s, asymmetric breakout</figcaption>
         </figure>
       </div>
 
       <h3>Explosive Preset</h3>
       <p>
-        We also made an "explosive" preset that cranks up the shock revival
-        speed, ramps down boundary damping, and tilts the preferred axis hard
-        to get a bipolar jet-like explosion. It's more visually dramatic than
-        physically realistic but shows what the simulator can do at the extreme
-        end of the parameter space.
+        We also made an "explosive" preset. This one revives the shock faster,
+        lowers the boundary damping, and tilts the preferred axis more strongly.
+        Boundary damping is
+        how much we slow things down near the edge of the simulation box so they
+        do not behave weirdly at the border. This preset is the more dramatic
+        version, and it was useful to see how much we could push the simulator.
       </p>
       <div class="figure-row">
         <figure>
-          <img src="images/explosive_frame_0000.png" style="width: 200px" alt="Explosive frame 0" />
+          <img
+            src="images/explosive_frame_0000.png"
+            style="width: 200px"
+            alt="Explosive frame 0"
+          />
           <figcaption>t = 0 s</figcaption>
         </figure>
         <figure>
-          <img src="images/explosive_frame_0112.png" style="width: 200px" alt="Explosive frame 112" />
-          <figcaption>t = 1.34 s — mid-explosion</figcaption>
+          <img
+            src="images/explosive_frame_0112.png"
+            style="width: 200px"
+            alt="Explosive frame 112"
+          />
+          <figcaption>t = 1.34 s, mid-explosion</figcaption>
         </figure>
         <figure>
-          <img src="images/explosive_frame_0220.png" style="width: 200px" alt="Explosive frame 220" />
-          <figcaption>t = 2.64 s — late bipolar outflow</figcaption>
+          <img
+            src="images/explosive_frame_0220.png"
+            style="width: 200px"
+            alt="Explosive frame 220"
+          />
+          <figcaption>t = 2.64 s, late two-sided outflow</figcaption>
         </figure>
       </div>
       <div class="wide-figure">
-        <img src="images/explosive_diagnostics.png" style="width: 100%; max-width: 820px"
-             alt="Explosive preset diagnostics overview" />
-        <p>Diagnostics for the explosive preset — notice the much faster shock revival,
-           higher peak entropy, and larger outflow fraction compared to the baseline.</p>
+        <img
+          src="images/explosive_diagnostics.png"
+          style="width: 100%; max-width: 820px"
+          alt="Explosive preset diagnostics overview"
+        />
+        <p>
+          The explosive diagnostics show what we expected: faster shock revival,
+          higher peak entropy, and more outflow than the baseline.
+        </p>
       </div>
 
       <h2>References</h2>
@@ -420,14 +513,24 @@
         </li>
         <li>
           NVIDIA GPU Gems,
-          <a href="https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-39-volume-rendering-techniques"
-            >"Chapter 39. Volume Rendering Techniques"</a>.
+          <a
+            href="https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-39-volume-rendering-techniques"
+            >"Chapter 39. Volume Rendering Techniques"</a
+          >.
         </li>
         <li>
           The yt Project,
           <a href="https://yt-project.org/doc/visualizing/volume_rendering.html"
-            >"3D Visualization and Volume Rendering"</a>.
+            >"3D Visualization and Volume Rendering"</a
+          >.
         </li>
+      </ul>
+
+      <h2>Contributions from each team member</h2>
+      <ul class="contributions">
+        <li><strong>Kailash Ranganathan:</strong> TODO</li>
+        <li><strong>Anirudh Kotamraju:</strong> TODO</li>
+        <li><strong>Shaoyuan Gao:</strong> TODO</li>
       </ul>
     </div>
   </body>
