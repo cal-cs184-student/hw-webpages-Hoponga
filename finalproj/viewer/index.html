@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Interactive Viewer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css?v=11" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.183.2/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main class="viewer-shell">
+      <section class="viewport" aria-label="Interactive snapshot viewport">
+        <canvas id="scene-canvas"></canvas>
+        <div id="loading-indicator" class="loading-indicator">Loading data</div>
+        <div class="status-strip">
+          <span id="frame-label">frame 0</span>
+          <span id="shock-label">shock radius 0.000</span>
+          <span id="tracer-label">0 tracers</span>
+        </div>
+      </section>
+      <aside class="control-panel" aria-label="Viewer controls">
+        <header>
+          <p class="eyebrow">Viewer</p>
+          <h1>Explosion Explorer</h1>
+        </header>
+
+        <div class="control-group">
+          <label for="frame-slider">Time</label>
+          <input
+            id="frame-slider"
+            type="range"
+            min="0"
+            max="0"
+            value="0"
+            step="1"
+          />
+          <div class="button-row">
+            <button
+              id="previous-frame"
+              type="button"
+              aria-label="Previous frame"
+            >
+              Back
+            </button>
+            <button
+              id="play-toggle"
+              type="button"
+              aria-label="Play or pause frames"
+            >
+              Play
+            </button>
+            <button id="next-frame" type="button" aria-label="Next frame">
+              Forward
+            </button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label for="view-mode">View</label>
+          <select id="view-mode">
+            <option value="particles">Volume + plumes</option>
+            <option value="clean">Volume only</option>
+            <option value="tracers">Tracer ejecta</option>
+            <option value="slices">Debug slices</option>
+          </select>
+        </div>
+      </aside>
+    </main>
+    <script type="module" src="./app.js?v=11"></script>
+  </body>
+</html>
