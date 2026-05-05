@@ -122,14 +122,6 @@
         the results!
       </p>
 
-      <figure>
-        <img
-          src="images/viewer_animation.gif"
-          style="width: 100%; max-width: 720px"
-        />
-        <figcaption>Gif of one run in our interactive web viewer</figcaption>
-      </figure>
-
       <h2>Technical Approach</h2>
 
       <h3>The Physics Model</h3>
@@ -209,17 +201,6 @@
         of radial symmetry, giving the unevenness.
       </p>
 
-      <figure>
-        <img
-          src="images/milestone_2d_sequence.png"
-          style="width: 100%; max-width: 760px"
-        />
-        <figcaption>
-          Earlier 2D milestone frames before we tried going for a proper 3D
-          simulator.
-        </figcaption>
-      </figure>
-
       <h3>Rendering</h3>
       <p>
         For 2D rendering, we combine a few fields into one image. Entropy gives
@@ -241,45 +222,12 @@
         read.
       </p>
 
-      <figure>
-        <img
-          src="images/rendering_breakdown.png"
-          style="width: 100%; max-width: 830px"
-        />
-        <figcaption>Our final 3D simulation.</figcaption>
-      </figure>
-
       <p>
         We also added camera paths for videos. One annoying bug was that the
         camera used the raw solver step even though we saved every 4th frame,
         which led to the camera would randomly jump in the video. The fix was to
         move the camera based on the output frame number instead.
       </p>
-
-      <h3>Interactive Web Viewer (play around with it!!)</h3>
-      <p>
-        As our final step, we made an interactive Three.js viewer. We export
-        saved snapshots to JSON and load them in the browser. The interactive
-        view allows you to rotate around the supernova, move through time with a
-        slider, and switch between the multiple views of both the volume and
-        plume particles, tracer particles, or just the volume. We think it came
-        out really nice!
-      </p>
-
-      <figure>
-        <iframe
-          src="viewer/index.html"
-          title="Interactive supernova viewer"
-          style="
-            display: block;
-            width: 100%;
-            height: 640px;
-            border: 0;
-            border-radius: 8px;
-            background: #06070a;
-          "
-        ></iframe>
-      </figure>
 
       <h3>Problems we ran into</h3>
       <p>
@@ -310,10 +258,10 @@
 
       <h3>Lessons learned</h3>
       <p>
-        Coming into this project, none of us knew much about high-energy
-        astrophysics. We spent a while reading papers on core-collapse
-        supernovae to understand the actual physics before writing any code. The
-        central challenge in real supernova theory is the
+        Coming into this project, none of us knew much about supernova physics.
+        We spent a while reading papers on core-collapse supernovae to
+        understand this actual physics before writing any code. The central
+        challenge in real supernova theory is the
         <em>shock revival problem</em>: a shockwave launches outward from the
         rebounding core, quickly stalls at a few hundred kilometers as it loses
         energy to neutrino emission, and then somehow has to be revived. The
@@ -430,6 +378,13 @@
         big panel is the 3D-looking render. The smaller panels are slices
         through the grid, which helped us debug what was happening inside.
       </p>
+      <figure>
+        <img
+          src="images/rendering_breakdown.png"
+          style="width: 100%; max-width: 830px"
+        />
+        <figcaption>Our final 3D simulation.</figcaption>
+      </figure>
       <div class="figure-row">
         <figure>
           <img
@@ -503,6 +458,39 @@
           higher peak entropy, and more outflow than the baseline.
         </p>
       </div>
+
+      <h3>Interactive Web Viewer (play around with it!!)</h3>
+      <p>
+        As our final step, we made an interactive Three.js viewer. We export
+        saved snapshots to JSON and load them in the browser. The interactive
+        view allows you to rotate around the supernova, move through time with a
+        slider, and switch between the multiple views of both the volume and
+        plume particles, tracer particles, or just the volume. We think it came
+        out really nice!
+      </p>
+
+      <figure>
+        <img
+          src="images/viewer_animation.gif"
+          style="width: 100%; max-width: 720px"
+        />
+        <figcaption>Gif of one run in our interactive web viewer</figcaption>
+      </figure>
+
+      <figure>
+        <iframe
+          src="viewer/index.html"
+          title="Interactive supernova viewer"
+          style="
+            display: block;
+            width: 100%;
+            height: 640px;
+            border: 0;
+            border-radius: 8px;
+            background: #06070a;
+          "
+        ></iframe>
+      </figure>
 
       <h2>References</h2>
       <ul>
