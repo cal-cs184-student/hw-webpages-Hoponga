@@ -117,13 +117,15 @@
         saved simulation and move through time. Our code uses a bunch of heuristics to get a reasonable-looking supernova effect and is not by any means a full astrophysical simulation, but we are still happy with the results!
       </p>
 
-      <div class="todo-image">
-        <strong>TODO image/video</strong>
-        <span>
-          Add the best final 3D animation still or an embedded video here, so
-          the first thing people see is the actual supernova output.
-        </span>
-      </div>
+      <figure>
+        <img
+          src="images/viewer_animation.gif"
+          style="width: 100%; max-width: 720px"
+        />
+        <figcaption>
+          Gif of one run in our interactive web viewer 
+        </figcaption>
+      </figure>
 
       <h2>Technical Approach</h2>
 
@@ -173,14 +175,13 @@
         from being purely radial. The buoyancy provides the effect of "rising plumes" and pushes the shock into the uneven shapes. 
       </p>
 
-      <div class="todo-image">
-        <strong>TODO diagram</strong>
-        <span>
-          Add a simple labeled diagram of the core, gain region, shock shell,
-          and plume direction. This would make the physics explanation easier to
-          follow.
-        </span>
-      </div>
+      <figure>
+        <img
+          src="images/physics_regions.png"
+          style="width: 100%; max-width: 720px"
+        />
+
+      </figure>
 
       <p>
         For moving density and entropy forward, we use semi-Lagrangian
@@ -200,14 +201,15 @@
         explosion, a swirl direction, and a deterministic plume seed. The plume seed is a fixed pattern from sine waves which provides an extra breaking of radial symmetry, giving the unevenness. 
       </p>
 
-      <div class="todo-image">
-        <strong>TODO image</strong>
-        <span>
-          Add a side-by-side 2D frame and 3D frame here to show how the same
-          simulator idea changed when we moved from a circle to a full 3D
-          volume.
-        </span>
-      </div>
+      <figure>
+        <img
+          src="images/milestone_2d_sequence.png"
+          style="width: 100%; max-width: 760px"
+        />
+        <figcaption>
+          Earlier 2D milestone frames before we tried going for a proper 3D simulator.
+        </figcaption>
+      </figure>
 
       <h3>Rendering</h3>
       <p>
@@ -230,14 +232,15 @@
         read.
       </p>
 
-      <div class="todo-image">
-        <strong>TODO image</strong>
-        <span>
-          Add a rendering comparison here, like density-only versus final
-          plume/shock rendering, because that explains why the final images look
-          better.
-        </span>
-      </div>
+      <figure>
+        <img
+          src="images/rendering_breakdown.png"
+          style="width: 100%; max-width: 830px"
+        />
+        <figcaption>
+          Our final 3D simulation.
+        </figcaption>
+      </figure>
 
       <p>
         We also added camera paths for videos. One annoying bug was that the
@@ -253,13 +256,12 @@
         both the volume and plume particles, tracer particles, or just the volume. We think it came out really nice! 
       </p>
 
-      <div class="todo-image">
-        <strong>TODO image</strong>
-        <span>
-          Add a screenshot of the Three.js viewer here once the final hosted
-          viewer is ready.
-        </span>
-      </div>
+      <figure>
+        <img
+          src="images/viewer_grid.png"
+          style="width: 100%; max-width: 760px"
+        />
+      </figure>
 
       <h3>Problems we ran into</h3>
       <p>
