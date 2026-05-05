@@ -108,8 +108,8 @@
       <p>
         Our project was to make a simulator of a supernova, specifically a
         core-collapse supernova. In the core-collapse mechanism, a star loses
-        its expansive energy through nuclear fusion, collapses into itself due
-        to gravity, and the inward build-up of pressure leads to the explosion.
+        its expansive energy through nuclear fusion and collapses into itself
+        due to gravity. The inward build-up of pressure leads to the explosion.
         We wanted to show the main post-bounce stages, specifically after the
         star's core has collapsed and rebounded, launching a shockwave outward.
         The shock launches, stalls, gets revived by neutrino heating, forms hot
@@ -126,30 +126,29 @@
 
       <h3>The Physics Model</h3>
       <p>
-        As mentioned in the milestone, both supernova dynamics and high energy
-        physics were pretty new and unfamiliar fields to us. We read a bunch of
-        papers and then settled on a post-bounce model. In this model, we do a
-        fluid simulation where the center acts like a proto-neutron star, which
-        is the tiny dense object left in the middle right after collapse. So
-        that we don't have to model the actual core collapse dynamics, we start
-        our simulation after the shock has already launched. The part we care
-        about is after bounce, where the shock, heating, cooling, and plumes
-        matter.
+        As mentioned in the milestone, supernova dynamics and were pretty new to
+        us. We read a bunch of papers and then settled on a post-bounce model.
+        In this model, we do a fluid simulation where the center acts like a
+        proto-neutron star, which is the tiny dense object left in the middle
+        right after collapse. So that we don't have to model the actual core
+        collapse dynamics, we start our simulation after the shock has already
+        launched. The part we care about is "after bounce," where the shock,
+        heating, cooling, and plumes are important to model.
       </p>
       <p>
-        The state of our dynamical simulation is the density field, entropy
-        field, velocity field, and tracer positions. The tracers are physically
-        meaningless and massless "marker" particles that exist to show the flow
-        of the star fluid.
+        The state of our dynamical simulation includes a density field, entropy
+        field, velocity field, and tracer positions. The white dot tracers are
+        physically meaningless and massless "marker" particles that exist to
+        show the flow of the star fluid.
       </p>
       <p>
-        The way we simulate the shock is still similar to the milestone version.
+        The way we simulate the shock is still similar to the milestone we did.
         The shock is the outward-moving pressure wave that starts the explosion.
         We hardcode the rough shock radius over time, where the radius is just
         how far the shock is from the center. It grows outward, stalls for a
-        bit, and then keeps going after the revival - we hardcode the stall to
+        bit, and then keeps going after the revival -we hardcode the stall to
         simulate this effect. In 3D, we also let the entropy field deform the
-        shock surface locally, which gives the shock a much more uneven shape.
+        shock surface locally, which gives the shock a mch more uneven shape.
       </p>
       <p>
         The shock shell is the thin area around the shock surface. It divides
@@ -168,7 +167,7 @@
         The velocity update has a few main forces. We have inward gravity from
         the center, buoyancy from hot high-entropy fluid, a shock push around
         the shock shell, and in 3D a swirl/outflow term that bends the flow away
-        from being purely radial. The buoyancy provides the effect of "rising
+        from only being radial. This buoyancy provides the effect of "rising
         plumes" and pushes the shock into the uneven shapes.
       </p>
 
@@ -180,13 +179,14 @@
       </figure>
 
       <p>
-        For moving density and entropy forward, we use semi-Lagrangian
-        advection. The basic idea is that for each grid cell, we look backward
-        along the velocity field and sample the old value from there. Advection
-        means carrying stuff along with the flow. Semi-Lagrangian is the
-        backwards lookup trick that makes the update stable. The tracer
-        particles are moved by sampling the velocity where they are and taking a
-        simple Euler step.
+        For moving density and entropy forward, we use semi-Lagrangian advection
+        (a big term, we know!). The basic idea is that for each grid cell, we
+        look backward along the velocity field and sample the old value from
+        there. Advection means carrying stuff along with the flow.
+        Semi-Lagrangian advection is the backwards lookup trick that makes the
+        update stable - for this, we used the formulas that we discussed in
+        lecture! The white dot tracers are moved by sampling the velocity where
+        they are and taking a simple Euler step.
       </p>
 
       <h3>Going from 2D to 3D</h3>
@@ -196,21 +196,19 @@
         our 2D simulation working pretty well (we have some preliminary results
         in our milestone report), we extended the update dynamics to 3D. The 3D
         version adds a few extra controls: a preferred direction for the
-        explosion, a swirl direction, and a deterministic plume seed. The plume
-        seed is a fixed pattern from sine waves which provides an extra breaking
-        of radial symmetry, giving the unevenness.
+        explosion and a swirl direction as well as a deterministic plume seed.
+        The plume seed is a fixed pattern from sine waves which provides even
+        more breaking of radial symmetry, giving us the unevenness.
       </p>
 
       <h3>Rendering</h3>
       <p>
         For 2D rendering, we combine a few fields into one image. Entropy gives
         the red/yellow hot-looking colors, heating adds blue/green, and entropy
-        gradients make the plume boundaries pop. A gradient shows how quickly a
-        value changes from one place to the next, so entropy gradients show the
-        edges between hot plumes and the surrounding material. We also draw the
-        shock as a white outline and scatter the tracer particles on top. This
-        is basically the same style as the milestone frames, with cleaner colors
-        and more consistent scaling.
+        gradients make the plume boundaries look more pronounced (entropy
+        gradients show how quickly entropy changes from one place to the next).
+        We also draw the shock as a white outline and scatter the tracer
+        particles on top.
       </p>
       <p>
         For 3D rendering, we stack slices of the 3D grid from back to front and
@@ -225,14 +223,14 @@
       <p>
         We also added camera paths for videos. One annoying bug was that the
         camera used the raw solver step even though we saved every 4th frame,
-        which led to the camera would randomly jump in the video. The fix was to
+        which led to the camera randomly jumping in the video. The fix was to
         move the camera based on the output frame number instead.
       </p>
 
       <h3>Problems we ran into</h3>
       <p>
         Radial symmetry: In our first implementation, our simulator was just a
-        clean expanding circle/sphere, and this is because there was no lack of
+        clean expanding circle/sphere, and this is because there was almost full
         radial symmetry in any of our dynamics. This of course is not what
         happens in a real supernova. To fix this, we added explicit angular
         heating patterns and plume seeds so some parts of the shock get pushed
@@ -275,7 +273,7 @@
         heuristics to model each of these individual steps. If we really wanted
         to simulate neutrino transport entirely (solve Boltzmann equation for
         billions of neutrinos), this would be a huge HPC problem. In summary,
-        our simplifying components are:
+        our simplifying components were:
       </p>
 
       <ul>
@@ -289,7 +287,7 @@
           first principles.
         </li>
         <li>
-          Janky heuristic neutrino heating and cooling: The real neutrino
+          Janky heuristic neutrino heating and cooling: the real neutrino
           transport that defines local heating/cooling rates are based on a
           bunch of other factors (neutrino luminosity, opactiy, etc) that was
           once again too hard for us to model from scratch. Instead, we just
