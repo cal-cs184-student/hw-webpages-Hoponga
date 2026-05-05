@@ -168,10 +168,12 @@
         background: #0057a8;
         color: #fff;
         cursor: pointer;
+        display: inline-block;
         font: inherit;
         font-weight: 600;
         min-width: min(100%, 360px);
         padding: 14px 22px;
+        text-decoration: none;
       }
 
       .viewer-load-button:hover {
@@ -564,9 +566,12 @@
 
       <figure class="viewer-embed">
         <div class="viewer-load-controls">
-          <button class="viewer-load-button" type="button">
+          <a
+            class="viewer-load-button"
+            href="https://cal-cs184-student.github.io/hw-webpages-Hoponga/finalproj/viewer/"
+          >
             Load interactive viewer
-          </button>
+          </a>
         </div>
         <iframe
           data-src="viewer/index.html"
@@ -624,7 +629,8 @@
       const viewerButton = document.querySelector(".viewer-load-button");
       const viewerFrame = viewerEmbed?.querySelector("iframe");
 
-      viewerButton?.addEventListener("click", () => {
+      viewerButton?.addEventListener("click", (event) => {
+        event.preventDefault();
         if (viewerFrame && !viewerFrame.hasAttribute("src")) {
           viewerFrame.src = viewerFrame.dataset.src;
         }
