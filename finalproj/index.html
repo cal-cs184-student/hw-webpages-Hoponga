@@ -1,0 +1,441 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=default"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      h1 {
+        text-align: center;
+      }
+
+      .container {
+        margin: 0 auto;
+        padding: 60px 20%;
+      }
+
+      figure {
+        text-align: center;
+      }
+
+      img {
+        display: inline-block;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+
+      th,
+      td {
+        padding: 6px 12px;
+        text-align: left;
+        border: 1px solid #ccc;
+      }
+
+      th {
+        background: #f5f5f5;
+      }
+
+      .figure-row {
+        display: flex;
+        gap: 16px;
+        justify-content: center;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        margin: 24px 0;
+      }
+
+      .figure-row figure {
+        margin: 0;
+      }
+
+      .wide-figure {
+        text-align: center;
+        margin: 24px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>CS184 Final Project Report</h1>
+      <div style="text-align: center">Core-Collapse Supernova Simulator</div>
+      <div style="text-align: center">
+        Kailash Ranganathan, Anirudh Kotamraju, Shaoyuan Gao
+      </div>
+
+      <br />
+
+      <h2>Abstract</h2>
+      <p>
+        We built a real-time-parameterizable, offline-rendered simulator of
+        core-collapse supernova (CCSN) dynamics. Starting from the known
+        post-bounce physics — a stalled shock, a neutrino-driven gain region,
+        buoyancy-driven convective plumes, and asymmetric shock revival — we
+        implemented a reduced compressible fluid model on a Cartesian grid in
+        both 2D and 3D. The simulator evolves density, entropy, and velocity
+        fields forward with semi-Lagrangian advection, explicit heating and
+        cooling source terms, and a prescribed shock-radius trajectory. Thousands
+        of massless tracer particles track the ejecta flow. For visualization we
+        built a layered rendering pipeline: a false-color composite of scalar
+        fields for 2D runs, and a pseudo-volumetric depth-composited projection
+        with perspective, rim lighting, and cinematic depth cues for 3D. On top
+        of that we built a browser-based interactive viewer using Three.js that
+        lets users scrub through simulation time, rotate the camera, and toggle
+        between raymarched volume, plume particle, and shock-surface views.
+        Together the result is a visually convincing, parameterizable animation
+        of all the main stages of a supernova explosion.
+      </p>
+
+      <h2>Technical Approach</h2>
+
+      <h3>Physics Model</h3>
+      <p>
+        A realistic CCSN simulation requires solving the Boltzmann neutrino
+        transport equation coupled to multi-fluid MHD with a nuclear equation of
+        state — a problem that consumes hundreds of millions of CPU-hours on
+        dedicated supercomputers. Our goal was a qualitatively correct visual
+        simulator, so we adopted a <em>reduced model</em> that captures the
+        essential dynamics without any of that machinery.
+      </p>
+      <p>
+        The physical state at each timestep consists of four fields defined on a
+        uniform Cartesian grid: a density field \(\rho\), an entropy field
+        \(s\), a vector velocity field \(\mathbf{v}\), and the positions and
+        velocities of \(N\) massless tracer particles. The grid spans a
+        normalized domain of radius 1 (roughly 500 km in physical units). We
+        do not simulate the core collapse itself — the simulation begins
+        post-bounce, with the proto-neutron star treated implicitly as a
+        fixed gravitational source at the center and a prescribed
+        neutrino-heating zone.
+      </p>
+      <p>
+        The shock trajectory is prescribed analytically via a smoothstep
+        function: the shock radius \(R_\text{shock}(t)\) first expands rapidly,
+        stalls near \(R \approx 0.27\) for a fixed interval (representing the
+        energy-loss phase), then revives and expands to a final radius of
+        \(\approx 0.8\). At each timestep the actual shock radius relaxes toward
+        the target with a first-order lag, and a locally deformed
+        <em>shock surface</em> \(R_\text{shock}(\hat{\mathbf{n}})\) is built
+        by modulating the mean radius with a low-order angular pattern seeded
+        by the entropy field.
+      </p>
+      <p>
+        Heating and cooling are defined by spatial masks. The
+        <em>gain region</em> — the annular shell between the gain radius
+        (≈ 52% of the shock radius) and the shock — receives a heating term
+        proportional to \(\exp(-2r)\) and weighted by a low-order angular
+        driving pattern, mimicking the direction-dependent neutrino deposition
+        expected from 3D simulations. A narrow cooling mask just inside the
+        gain radius removes entropy, representing the net-cooling zone seen
+        below the gain radius in real neutrino-transport models. The net source
+        term
+        \[
+          \dot{s} = Q_\text{heat} - Q_\text{cool} + \kappa \nabla^2 s
+        \]
+        is added to the entropy field each step; a small Laplacian diffusion
+        term \(\kappa \nabla^2 s\) stabilizes the solver against grid-scale
+        noise.
+      </p>
+      <p>
+        The velocity update combines four radial forces — gravity
+        \(-g/(r^2 + \epsilon)\), a buoyancy term proportional to local entropy
+        contrast relative to the gain-region mean, an outward shock-push
+        Gaussian peaked at the shock surface, and (in 3D) a late-time outflow
+        bias along a preferred symmetry axis — plus a pressure-gradient
+        acceleration \(-\nabla P / \rho\) where the pressure equation of state
+        is \(P = \rho (0.55 + 1.6\,s)\). In 3D, a swirl force is added
+        perpendicular to both the radial direction and a preferred rotation axis,
+        producing the spiral vorticity seen in SASI-dominated simulations. The
+        velocity is advanced with a simple explicit step and a mild global
+        damping factor of 0.992 to prevent unbounded growth.
+      </p>
+      <p>
+        Advection of density and entropy is done with
+        <em>semi-Lagrangian back-tracing</em>: for each grid cell, we trace a
+        streamline backward by one timestep and sample the upwind field value
+        using N-dimensional multilinear interpolation over the \(2^N\) corner
+        stencil. This scheme is unconditionally stable regardless of the
+        Courant number, which allowed us to use relatively large timesteps
+        (\(\Delta t = 0.012\)) without numerical blow-up. Tracer particles are
+        advected by sampling the velocity field at their positions with the
+        same interpolant and integrating with an Euler step; a momentum
+        relaxation (drag) damps their velocity toward the local grid velocity
+        each step so they track the fluid rather than free-streaming.
+      </p>
+
+      <h3>2D and 3D Implementations</h3>
+      <p>
+        We designed the solver to be dimension-agnostic from the start. All
+        coordinate grids, radial unit vectors, and velocity arrays are stored
+        as \((D \times N^D)\)-shaped component-stacked arrays. The
+        semi-Lagrangian advection routine, the multilinear sampler, and the
+        Laplacian all work by iterating over axes, so the same code runs in 2D
+        and 3D without branching. This let us validate correctness in fast 2D
+        runs before committing to slow 3D ones.
+      </p>
+      <p>
+        In 3D, the model gains a preferred symmetry axis (configurable tilt
+        and azimuth), a random asymmetry axis blended toward it, a swirl axis
+        for rotation, and a structured <em>plume seed</em> — a
+        deterministic spatial noise field built from sines at several spatial
+        frequencies to seed angular variation in the shock surface without
+        introducing random noise per run.
+      </p>
+
+      <h3>Rendering</h3>
+      <p>
+        For 2D output we build a composite image by blending four false-color
+        channels — log-density mapped through the <em>cividis</em> colormap,
+        entropy through <em>inferno</em>, heating through <em>turbo</em>, and
+        the entropy gradient magnitude through <em>magma</em> — with weights
+        0.24 / 0.34 / 0.24 / 0.12, plus a thin shock-rim highlight. All
+        channels are normalized using robust percentile bounds (not min/max) so
+        that a few hot cells do not wash out the plume structure. A contour at
+        the shock level set overlays the composite, and tracers are drawn as
+        small scatter points.
+      </p>
+      <p>
+        For 3D output we implemented a pseudo-volumetric projection. The 3D
+        grid is traversed from back to front; each depth slice is mapped to
+        a per-voxel emission color and opacity using a transfer function that
+        gates on physical features: entropy, net heating, entropy-gradient
+        magnitude (which highlights plume interfaces), and a thin shock-surface
+        band. Feature gating was critical — early attempts assigned opacity to
+        raw density, which collapsed the whole image to a featureless bright
+        blob. Each depth slice is scaled by a mild perspective factor, shifted
+        obliquely in screen space according to a camera-pose phase, and
+        composited front-to-back with the standard alpha-blending formula
+        \(C = C_\text{prev} + (1 - \alpha_\text{prev}) \alpha_k C_k\). After
+        compositing, a screen-space post-pass adds silhouette rim lighting,
+        near/far tint separation, and a subtle depth-haze term. A simulated
+        deep-space background with procedural stars completes the image. A
+        cinematic vignette and gamma curve are applied last.
+      </p>
+      <p>
+        Camera paths orbit the domain along one of three named trajectories
+        (<em>slow_orbit</em>, <em>tight_fly_in</em>, <em>wide_reveal</em>);
+        the camera phase advances by output cadence — not by raw solver step —
+        so sparse renders do not exhibit phase jumps.
+      </p>
+
+      <h3>Interactive Web Viewer</h3>
+      <p>
+        We exported precomputed simulation snapshots as compact JSON containing
+        3D entropy/heating/opacity arrays, tracer positions, and shock-surface
+        points. A static Three.js viewer at
+        <code>web/interactive_viewer/</code> loads this data and renders it in
+        the browser with a GLSL raymarching shader on a cube volume, soft-disc
+        particle sprites for plume ejecta, and a smooth shock mesh. Shader-side
+        interpolation between adjacent saved time slices produces smooth
+        in-between frames at 300 ms/step playback. OrbitControls let the user
+        freely rotate the scene; a compact XYZ gizmo tracks camera orientation.
+        The viewer exposes a time scrubber, play/pause, and a view selector for
+        volume, plume particles, and tracer ejecta.
+      </p>
+
+      <h3>Problems and How We Tackled Them</h3>
+      <p>
+        <strong>Spherical symmetry.</strong> The initial solver produced
+        perfectly spherical shocks because all forces were radially symmetric.
+        We broke this by adding a low-order angular driving pattern — a
+        superposition of a mode-1 sinusoid and a sloshing term — ramped on
+        smoothly after shock stall. In 3D we additionally introduced dipole and
+        quadrupole projections onto a tilted preferred axis and a structured
+        plume seed, which produces consistent asymmetric plume geometry across
+        runs.
+      </p>
+      <p>
+        <strong>Volume rendering opacity.</strong> Assigning opacity to
+        log-density produced a uniformly bright sphere with no internal
+        structure. We switched to feature-gated opacity (entropy, heating,
+        entropy gradient, thin shock rim) which immediately revealed plume
+        structure. Getting the opacity scale right required iterative tuning
+        per transfer-function term.
+      </p>
+      <p>
+        <strong>Camera phase jumps.</strong> When rendering only every 4th
+        solver step, the camera orbit phase was advancing by the raw step index
+        rather than the output frame index, causing a visible snap every time
+        the scene was assembled into a video. We fixed this by passing the
+        output-cadence frame index to the camera pose resolver rather than
+        the solver step.
+      </p>
+      <p>
+        <strong>Browser volume blockiness.</strong> The initial web export used
+        a 56³ texture, which looked obviously voxelated in the browser.
+        We increased the export resolution to 96³, applied a separable 3D blur
+        to the opacity proxy before export, and added per-fragment ray-start
+        jitter in the GLSL shader to break up Moiré patterns.
+      </p>
+
+      <h3>Lessons Learned</h3>
+      <p>
+        Dimension-agnostic design from the start was essential — retrofitting
+        3D support into a 2D-only codebase would have been far more painful.
+        Similarly, investing in named presets and a batch runner early let us
+        iterate on visual quality quickly instead of retyping parameters. On the
+        rendering side, we learned that feature-gated opacity (driven by
+        physical signals like entropy and heating) is the right abstraction:
+        attempts to visualize raw density or to dial in a single global opacity
+        scale were always wrong in different regions of the domain simultaneously.
+        Finally, building the interactive web viewer uncovered a class of issues
+        (texture blockiness, interpolation artifacts) that were invisible in
+        static PNG frames — shipping an interactive artifact pushed us toward a
+        substantially higher final quality.
+      </p>
+
+      <h2>Results</h2>
+
+      <h3>2D Baseline: Stalled-then-Reviving Shock</h3>
+      <p>
+        The baseline preset runs a 2D 192×192 grid for 240 steps. The sequence
+        below shows the shock launching, stalling, and then reviving with
+        asymmetric plume breakout. Colors encode entropy (red/yellow),
+        heating (blue/green), and the entropy gradient (shock edges).
+      </p>
+      <div class="figure-row">
+        <figure>
+          <img src="images/baseline_frame_0000.png" style="width: 200px" alt="Baseline frame 0" />
+          <figcaption>t = 0 s — initial infall</figcaption>
+        </figure>
+        <figure>
+          <img src="images/baseline_frame_0060.png" style="width: 200px" alt="Baseline frame 60" />
+          <figcaption>t = 0.72 s — stalled shock</figcaption>
+        </figure>
+        <figure>
+          <img src="images/baseline_frame_0120.png" style="width: 200px" alt="Baseline frame 120" />
+          <figcaption>t = 1.44 s — shock revival</figcaption>
+        </figure>
+        <figure>
+          <img src="images/baseline_frame_0240.png" style="width: 200px" alt="Baseline frame 240" />
+          <figcaption>t = 2.88 s — late expansion</figcaption>
+        </figure>
+      </div>
+      <div class="wide-figure">
+        <img src="images/baseline_diagnostics.png" style="width: 100%; max-width: 820px"
+             alt="2D baseline diagnostics overview" />
+        <p>Diagnostics time series for the 2D baseline run: shock radius, entropy evolution,
+           heating rates, outflow fraction, tracer expansion, and low-order asymmetry modes.</p>
+      </div>
+
+      <h3>3D Showcase: Pseudo-Volumetric Projection</h3>
+      <p>
+        The showcase preset runs a 3D 72³ grid with a tilted preferred axis,
+        strong dipole asymmetry, swirl, and late-time bipolar outflow. The main
+        panel is the pseudo-volumetric depth-composited projection; the three
+        insets are orthogonal midplane slices (xy, xz, yz).
+      </p>
+      <div class="figure-row">
+        <figure>
+          <img src="images/showcase_frame_0000.png" style="width: 280px" alt="3D showcase frame 0" />
+          <figcaption>t = 0 s</figcaption>
+        </figure>
+        <figure>
+          <img src="images/showcase_frame_0036.png" style="width: 280px" alt="3D showcase frame 36" />
+          <figcaption>t = 0.43 s — plume growth</figcaption>
+        </figure>
+        <figure>
+          <img src="images/showcase_frame_0072.png" style="width: 280px" alt="3D showcase frame 72" />
+          <figcaption>t = 0.86 s — asymmetric breakout</figcaption>
+        </figure>
+      </div>
+
+      <h3>Explosive Preset: Aggressive Bipolar Outflow</h3>
+      <p>
+        The explosive preset uses fast shock revival, minimal boundary damping,
+        a high-bias preferred axis, and tracer recycling. The result is a rapid
+        bipolar jet-like explosion with strong plume deformation visible in the
+        orthogonal slices.
+      </p>
+      <div class="figure-row">
+        <figure>
+          <img src="images/explosive_frame_0000.png" style="width: 200px" alt="Explosive frame 0" />
+          <figcaption>t = 0 s</figcaption>
+        </figure>
+        <figure>
+          <img src="images/explosive_frame_0112.png" style="width: 200px" alt="Explosive frame 112" />
+          <figcaption>t = 1.34 s — mid-explosion</figcaption>
+        </figure>
+        <figure>
+          <img src="images/explosive_frame_0220.png" style="width: 200px" alt="Explosive frame 220" />
+          <figcaption>t = 2.64 s — late bipolar outflow</figcaption>
+        </figure>
+      </div>
+      <div class="wide-figure">
+        <img src="images/explosive_diagnostics.png" style="width: 100%; max-width: 820px"
+             alt="Explosive preset diagnostics overview" />
+        <p>Diagnostics for the explosive preset. Note the faster shock revival,
+           higher peak entropy, and larger outflow fraction compared to the baseline.</p>
+      </div>
+
+      <h2>References</h2>
+      <ul>
+        <li>
+          Burrows &amp; Vartanyan,
+          <a href="https://www.nature.com/articles/s41586-020-03059-w"
+            >"Core-collapse supernova explosion theory"</a
+          >, <em>Nature</em>, 2021.
+        </li>
+        <li>
+          Burrows et al.,
+          <a href="https://link.springer.com/article/10.1007/s11214-017-0450-9"
+            >"Crucial Physical Dependencies of the Core-Collapse Supernova
+            Mechanism"</a
+          >, <em>Space Science Reviews</em>, 2018.
+        </li>
+        <li>
+          Janka,
+          <a href="https://doi.org/10.1146/annurev-nucl-102711-094901"
+            >"Explosion Mechanisms of Core-Collapse Supernovae"</a
+          >, <em>Annual Review of Nuclear and Particle Science</em>, 2012.
+        </li>
+        <li>
+          M&uuml;ller,
+          <a href="https://link.springer.com/article/10.1007/s41115-020-0008-5"
+            >"Hydrodynamics of core-collapse supernovae and their
+            progenitors"</a
+          >, <em>Living Reviews in Computational Astrophysics</em>, 2020.
+        </li>
+        <li>
+          Mezzacappa et al.,
+          <a href="https://link.springer.com/article/10.1007/s41115-020-00010-8"
+            >"Physical, numerical, and computational challenges of modeling
+            neutrino transport in core-collapse supernovae"</a
+          >, <em>Living Reviews in Computational Astrophysics</em>, 2020.
+        </li>
+        <li>
+          Lentz et al.,
+          <a href="https://doi.org/10.1088/2041-8205/807/2/L31"
+            >"Three-dimensional core-collapse supernova simulated using a 15
+            M<sub>sun</sub> progenitor"</a
+          >, <em>Astrophysical Journal Letters</em>, 2015.
+        </li>
+        <li>
+          Hanke et al.,
+          <a href="https://doi.org/10.1088/0004-637X/770/1/66"
+            >"SASI activity in three-dimensional neutrino-hydrodynamics
+            simulations of supernova cores"</a
+          >, <em>Astrophysical Journal</em>, 2013.
+        </li>
+        <li>
+          NVIDIA GPU Gems,
+          <a href="https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-39-volume-rendering-techniques"
+            >"Chapter 39. Volume Rendering Techniques"</a>.
+        </li>
+        <li>
+          The yt Project,
+          <a href="https://yt-project.org/doc/visualizing/volume_rendering.html"
+            >"3D Visualization and Volume Rendering"</a>.
+        </li>
+      </ul>
+    </div>
+  </body>
+</html>
