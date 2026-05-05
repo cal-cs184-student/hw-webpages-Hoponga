@@ -2,8 +2,10 @@
   <head>
     <meta charset="UTF-8" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=default"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap"
       rel="stylesheet"
     />
     <style>
@@ -13,20 +15,23 @@
 
       .container {
         margin: 0 auto;
-        max-width: 1100px;
-        padding: 60px 8%;
+        max-width: 1320px;
+        padding: 60px 3%;
       }
 
       figure {
         text-align: center;
+        margin: 24px 0;
       }
 
       img {
         display: inline-block;
+        max-width: 100%;
+        height: auto;
       }
 
       body {
-        font-family: "Inter", sans-serif;
+        font-family: "Libre Baskerville", Georgia, "Times New Roman", serif;
         color: #222;
       }
 
@@ -51,11 +56,9 @@
       }
 
       .figure-row {
-        display: flex;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         gap: 16px;
-        justify-content: center;
-        align-items: flex-start;
-        flex-wrap: wrap;
         margin: 24px 0;
       }
 
@@ -63,9 +66,44 @@
         margin: 0;
       }
 
+      .figure-row img {
+        width: 100%;
+      }
+
       .wide-figure {
         text-align: center;
         margin: 24px 0;
+      }
+
+      .report-image {
+        width: 100%;
+        max-width: 760px;
+      }
+
+      .wide-report-image {
+        width: 100%;
+        max-width: 820px;
+      }
+
+      .plot-report-image {
+        width: 100%;
+        max-width: 520px;
+      }
+
+      .viewer-still-row {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 12px;
+        margin: 24px 0 16px;
+      }
+
+      .viewer-still-row img {
+        width: 100%;
+      }
+
+      .viewer-gif {
+        width: 100%;
+        max-width: 520px;
       }
 
       .todo-image {
@@ -92,14 +130,60 @@
       .contributions li {
         margin-bottom: 10px;
       }
+
+      .viewer-embed {
+        text-align: center;
+      }
+
+      .viewer-embed iframe {
+        display: none;
+        width: 100%;
+        height: 640px;
+        border: 0;
+        border-radius: 8px;
+        background: #06070a;
+      }
+
+      .viewer-embed.loaded iframe {
+        display: block;
+      }
+
+      .viewer-load-controls {
+        display: flex;
+        justify-content: center;
+        margin: 18px 0 24px;
+      }
+
+      .viewer-load-button {
+        border: 0;
+        border-radius: 8px;
+        background: #0057a8;
+        color: #fff;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 600;
+        min-width: min(100%, 360px);
+        padding: 14px 22px;
+      }
+
+      .viewer-load-button:hover {
+        background: #004783;
+      }
     </style>
   </head>
   <body>
     <div class="container">
-      <h1>CS184 Final Project Report</h1>
-      <div style="text-align: center">Core-Collapse Supernova Simulator</div>
+      <h1>CS184 Final Project Report: Core-Collapse Supernova Simulator</h1>
       <div style="text-align: center">
         Kailash Ranganathan, Anirudh Kotamraju, Shaoyuan Gao
+      </div>
+      <div style="text-align: center; margin-top: 12px">
+        <a
+          href="https://youtu.be/rNm4xujAodQ"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Video</a
+        >
       </div>
 
       <br />
@@ -172,10 +256,7 @@
       </p>
 
       <figure>
-        <img
-          src="images/physics_regions.png"
-          style="width: 100%; max-width: 720px"
-        />
+        <img src="images/physics_regions.png" class="report-image" />
       </figure>
 
       <p>
@@ -323,42 +404,26 @@
       </p>
       <div class="figure-row">
         <figure>
-          <img
-            src="images/baseline_frame_0000.png"
-            style="width: 200px"
-            alt="Baseline frame 0"
-          />
+          <img src="images/baseline_frame_0000.png" alt="Baseline frame 0" />
           <figcaption>t = 0 s, material falling inward</figcaption>
         </figure>
         <figure>
-          <img
-            src="images/baseline_frame_0060.png"
-            style="width: 200px"
-            alt="Baseline frame 60"
-          />
+          <img src="images/baseline_frame_0060.png" alt="Baseline frame 60" />
           <figcaption>t = 0.72 s, stalled shock</figcaption>
         </figure>
         <figure>
-          <img
-            src="images/baseline_frame_0120.png"
-            style="width: 200px"
-            alt="Baseline frame 120"
-          />
+          <img src="images/baseline_frame_0120.png" alt="Baseline frame 120" />
           <figcaption>t = 1.44 s, shock revival</figcaption>
         </figure>
         <figure>
-          <img
-            src="images/baseline_frame_0240.png"
-            style="width: 200px"
-            alt="Baseline frame 240"
-          />
+          <img src="images/baseline_frame_0240.png" alt="Baseline frame 240" />
           <figcaption>t = 2.88 s, late expansion</figcaption>
         </figure>
       </div>
       <div class="wide-figure">
         <img
           src="images/baseline_diagnostics.png"
-          style="width: 100%; max-width: 820px"
+          class="plot-report-image"
           alt="2D baseline diagnostics overview"
         />
         <p>
@@ -368,7 +433,7 @@
         </p>
       </div>
 
-      <h3>3D Showcase</h3>
+      <h3>3D</h3>
       <p>
         This is the main 3D run we wanted to show. It runs on a 72&sup3; grid
         and uses a tilted axis, stronger asymmetry, swirl, and late outflow. The
@@ -377,36 +442,27 @@
         through the grid, which helped us debug what was happening inside.
       </p>
       <figure>
-        <img
-          src="images/rendering_breakdown.png"
-          style="width: 100%; max-width: 830px"
-        />
+        <img src="images/rendering_breakdown.png" class="wide-report-image" />
         <figcaption>Our final 3D simulation.</figcaption>
       </figure>
       <div class="figure-row">
         <figure>
-          <img
-            src="images/showcase_frame_0000.png"
-            style="width: 280px"
-            alt="3D showcase frame 0"
-          />
+          <img src="images/showcase_frame_0000.png" alt="3D showcase frame 0" />
           <figcaption>t = 0 s</figcaption>
         </figure>
         <figure>
           <img
             src="images/showcase_frame_0036.png"
-            style="width: 280px"
             alt="3D showcase frame 36"
           />
-          <figcaption>t = 0.43 s, plume growth</figcaption>
+          <figcaption>t = 0.43 s, plume</figcaption>
         </figure>
         <figure>
           <img
             src="images/showcase_frame_0072.png"
-            style="width: 280px"
             alt="3D showcase frame 72"
           />
-          <figcaption>t = 0.86 s, asymmetric breakout</figcaption>
+          <figcaption>t = 0.86 s, asymmetric plumes</figcaption>
         </figure>
       </div>
 
@@ -421,17 +477,12 @@
       </p>
       <div class="figure-row">
         <figure>
-          <img
-            src="images/explosive_frame_0000.png"
-            style="width: 200px"
-            alt="Explosive frame 0"
-          />
+          <img src="images/explosive_frame_0000.png" alt="Explosive frame 0" />
           <figcaption>t = 0 s</figcaption>
         </figure>
         <figure>
           <img
             src="images/explosive_frame_0112.png"
-            style="width: 200px"
             alt="Explosive frame 112"
           />
           <figcaption>t = 1.34 s, mid-explosion</figcaption>
@@ -439,16 +490,15 @@
         <figure>
           <img
             src="images/explosive_frame_0220.png"
-            style="width: 200px"
             alt="Explosive frame 220"
           />
-          <figcaption>t = 2.64 s, late two-sided outflow</figcaption>
+          <figcaption>t = 2.64 s, late outflow</figcaption>
         </figure>
       </div>
       <div class="wide-figure">
         <img
           src="images/explosive_diagnostics.png"
-          style="width: 100%; max-width: 820px"
+          class="plot-report-image"
           alt="Explosive preset diagnostics overview"
         />
         <p>
@@ -467,31 +517,51 @@
         out really nice!
       </p>
 
-      <figure>
+      <div class="viewer-still-row">
         <img
-          src="images/viewer_animation.gif"
-          style="width: 100%; max-width: 720px"
+          src="images/viewer_gif_still_01.png"
+          alt="Viewer animation still 1"
         />
+        <img
+          src="images/viewer_gif_still_02.png"
+          alt="Viewer animation still 2"
+        />
+        <img
+          src="images/viewer_gif_still_03.png"
+          alt="Viewer animation still 3"
+        />
+        <img
+          src="images/viewer_gif_still_04.png"
+          alt="Viewer animation still 4"
+        />
+        <img
+          src="images/viewer_gif_still_05.png"
+          alt="Viewer animation still 5"
+        />
+      </div>
+
+      <figure>
+        <img src="images/viewer_animation.gif" class="viewer-gif" />
         <figcaption>Gif of one run in our interactive web viewer</figcaption>
       </figure>
 
-      <figure>
+      <figure class="viewer-embed">
+        <div class="viewer-load-controls">
+          <button class="viewer-load-button" type="button">
+            Load interactive viewer
+          </button>
+        </div>
         <iframe
-          src="viewer/index.html"
+          data-src="viewer/index.html"
           title="Interactive supernova viewer"
-          style="
-            display: block;
-            width: 100%;
-            height: 640px;
-            border: 0;
-            border-radius: 8px;
-            background: #06070a;
-          "
+          loading="lazy"
         ></iframe>
       </figure>
 
       <h2>References</h2>
       <ul>
+        <li>CS 184 course slides (especially the fluid simulation lecture)</li>
+
         <li>
           Burrows &amp; Vartanyan,
           <a href="https://www.nature.com/articles/s41586-020-03059-w"
@@ -511,55 +581,39 @@
             >"Explosion Mechanisms of Core-Collapse Supernovae"</a
           >, <em>Annual Review of Nuclear and Particle Science</em>, 2012.
         </li>
-        <li>
-          M&uuml;ller,
-          <a href="https://link.springer.com/article/10.1007/s41115-020-0008-5"
-            >"Hydrodynamics of core-collapse supernovae and their
-            progenitors"</a
-          >, <em>Living Reviews in Computational Astrophysics</em>, 2020.
-        </li>
-        <li>
-          Mezzacappa et al.,
-          <a href="https://link.springer.com/article/10.1007/s41115-020-00010-8"
-            >"Physical, numerical, and computational challenges of modeling
-            neutrino transport in core-collapse supernovae"</a
-          >, <em>Living Reviews in Computational Astrophysics</em>, 2020.
-        </li>
-        <li>
-          Lentz et al.,
-          <a href="https://doi.org/10.1088/2041-8205/807/2/L31"
-            >"Three-dimensional core-collapse supernova simulated using a 15
-            M<sub>sun</sub> progenitor"</a
-          >, <em>Astrophysical Journal Letters</em>, 2015.
-        </li>
-        <li>
-          Hanke et al.,
-          <a href="https://doi.org/10.1088/0004-637X/770/1/66"
-            >"SASI activity in three-dimensional neutrino-hydrodynamics
-            simulations of supernova cores"</a
-          >, <em>Astrophysical Journal</em>, 2013.
-        </li>
-        <li>
-          NVIDIA GPU Gems,
-          <a
-            href="https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-39-volume-rendering-techniques"
-            >"Chapter 39. Volume Rendering Techniques"</a
-          >.
-        </li>
-        <li>
-          The yt Project,
-          <a href="https://yt-project.org/doc/visualizing/volume_rendering.html"
-            >"3D Visualization and Volume Rendering"</a
-          >.
-        </li>
+        <li><a href="https://threejs.org/docs/">Three.js docs</a></li>
       </ul>
 
       <h2>Contributions from each team member</h2>
+      We all got on call and in person to pair program since this worked well
+      for past classes. Here's what we focused on during our sessions:
       <ul class="contributions">
-        <li><strong>Kailash Ranganathan:</strong> TODO</li>
-        <li><strong>Anirudh Kotamraju:</strong> TODO</li>
-        <li><strong>Shaoyuan Gao:</strong> TODO</li>
+        <li>
+          <strong>Kailash Ranganathan:</strong> Physics Model, 2D milestone,
+          2D->3D improvements
+        </li>
+        <li>
+          <strong>Anirudh Kotamraju:</strong> Physics Model, 2D milestone,
+          interactive web viewer
+        </li>
+        <li>
+          <strong>Shaoyuan Gao:</strong> Literature review, initial advection
+          simulator, parameter tuning
+        </li>
       </ul>
     </div>
+    <script>
+      const viewerEmbed = document.querySelector(".viewer-embed");
+      const viewerButton = document.querySelector(".viewer-load-button");
+      const viewerFrame = viewerEmbed?.querySelector("iframe");
+
+      viewerButton?.addEventListener("click", () => {
+        if (viewerFrame && !viewerFrame.hasAttribute("src")) {
+          viewerFrame.src = viewerFrame.dataset.src;
+        }
+        viewerEmbed.classList.add("loaded");
+        viewerButton.remove();
+      });
+    </script>
   </body>
 </html>

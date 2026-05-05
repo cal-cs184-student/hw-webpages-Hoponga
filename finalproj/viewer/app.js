@@ -38,8 +38,9 @@ const renderer = new THREE.WebGLRenderer({
   antialias: true,
   alpha: false,
 });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 renderer.autoClear = false;
+let renderRequested = false;
 
 const camera = new THREE.PerspectiveCamera(42, 1, 0.01, 20);
 camera.position.set(1.7, -2.15, 1.25);
@@ -79,6 +80,7 @@ function resizeRenderer() {
   const { clientWidth, clientHeight } = elements.canvas;
   const width = Math.max(clientWidth, 1);
   const height = Math.max(clientHeight, 1);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   renderer.setSize(width, height, false);
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
@@ -300,7 +302,7 @@ function makeVolumeMaterial(texture, nextTexture) {
       volumeMap: { value: texture },
       nextVolumeMap: { value: nextTexture },
       frameBlend: { value: 0.0 },
-      steps: { value: 144 },
+      steps: { value: 104 },
       alphaScale: { value: 0.078 },
       threshold: { value: 0.018 },
     },
@@ -671,6 +673,7 @@ function renderFrame() {
   updateShell(frame);
   updateLabels(frame);
   elements.loadingIndicator.classList.remove("visible");
+  requestRender();
 }
 
 /** Return the frame after the current frame, wrapping around at the end. */
@@ -690,6 +693,13 @@ function setFrame(index) {
 function updateVolumeBlend(value) {
   if (!raymarchMaterial) return;
   raymarchMaterial.uniforms.frameBlend.value = THREE.MathUtils.clamp(value, 0, 1);
+}
+
+/** Queue a viewer redraw without keeping a permanent render loop alive. */
+function requestRender() {
+  if (renderRequested) return;
+  renderRequested = true;
+  requestAnimationFrame(animate);
 }
 
 /** Populate form controls from loaded viewer metadata. */
@@ -714,8 +724,13 @@ function bindEvents() {
     updateVolumeBlend(0);
     elements.playToggle.textContent = state.playing ? "Pause" : "Play";
     elements.playToggle.classList.toggle("active", state.playing);
+    requestRender();
   });
-  window.addEventListener("resize", resizeRenderer);
+  controls.addEventListener("change", requestRender);
+  window.addEventListener("resize", () => {
+    resizeRenderer();
+    requestRender();
+  });
 }
 
 /** Render the orientation gizmo in a fixed viewport corner using the main camera rotation. */
@@ -738,7 +753,7 @@ function renderAxisGizmo() {
 
 /** Render the viewer loop and advance playback when enabled. */
 function animate(timestamp) {
-  requestAnimationFrame(animate);
+  renderRequested = false;
   if (state.playing) {
     const elapsed = timestamp - state.lastAdvance;
     if (elapsed > PLAYBACK_FRAME_MS) {
@@ -750,15 +765,18 @@ function animate(timestamp) {
   } else {
     updateVolumeBlend(0);
   }
-  controls.update();
+  const controlsChanged = controls.update();
   renderer.clear();
   renderer.render(scene, camera);
   renderAxisGizmo();
+  if (state.playing || controlsChanged) {
+    requestRender();
+  }
 }
 
 /** Fetch the exported compact snapshot data file. */
 async function loadData() {
-  const response = await fetch("./data/viewer_data.json", { cache: "no-store" });
+  const response = await fetch("./data/viewer_data.json");
   if (!response.ok) {
     throw new Error(`Could not load viewer data: ${response.status}`);
   }
@@ -782,7 +800,7 @@ async function main() {
     elements.shockLabel.textContent = "run exporter";
     elements.tracerLabel.textContent = error.message;
   }
-  requestAnimationFrame(animate);
+  requestRender();
 }
 
 main();
