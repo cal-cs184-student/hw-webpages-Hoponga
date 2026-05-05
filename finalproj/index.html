@@ -106,19 +106,15 @@
 
       <h2>Abstract</h2>
       <p>
-        Our project was to make a supernova simulator with offline rendering.
-        We wanted to show the main post-bounce stages. Post-bounce
-        means after the star's core has collapsed and rebounded, launching a
+        Our project was to make a simulator of a supernova, specifically a core-collapse supernova. In the core-collapse mechanism, a star loses its expansive energy through nuclear fusion, collapses into itself due to gravity, 
+        and the inward build-up of pressure leads to the explosion. 
+
+
+        We wanted to show the main post-bounce stages, specifically after the star's core has collapsed and rebounded, launching a
         shockwave outward. The shock launches, stalls, gets revived by neutrino
-        heating, forms hot plumes, and finally breaks out unevenly. Neutrino
-        heating is basically energy from tiny particles called neutrinos getting
-        deposited back into the star fluid. Plumes are hot blobs of fluid that
-        rise outward, kind of like bubbles in boiling water. We started with the
-        2D simulator from our milestone and then moved it to 3D. We also made a
-        small browser viewer as a stretch goal, so you can rotate around the
-        saved simulation and scrub through time. The main thing we wanted was a
-        stalled shock that turns into a messy-looking explosion, and that is
-        what the final simulator shows.
+        heating, forms hot plumes, and finally breaks out unevenly. We began with the
+        2D simulator from our milestone and extended the dynamics to 3 dimensions. Finally, we made a small browser viewer with interactivity, so you can rotate around the
+        saved simulation and move through time. Our code uses a bunch of heuristics to get a reasonable-looking supernova effect and is not by any means a full astrophysical simulation, but we are still happy with the results!
       </p>
 
       <div class="todo-image">
@@ -131,55 +127,50 @@
 
       <h2>Technical Approach</h2>
 
+      
+
       <h3>The Physics Model</h3>
       <p>
-        Like we said in the milestone, supernova dynamics and high energy
-        physics were pretty new to us. We read a bunch of papers and then
-        settled on a post-bounce model. Basically, we do a fluid simulation
+        As mentioned in the milestone, both supernova dynamics and high energy physics were pretty new and unfamiliar fields to us. We read a bunch of papers and then
+        settled on a post-bounce model. In this model, we do a fluid simulation
         where the center acts like a proto-neutron star, which is the tiny dense
-        object left in the middle right after collapse. We start after the shock
+        object left in the middle right after collapse. So that we don't have to model the actual core collapse dynamics, we start our simulation after the shock
         has already launched. The part we care about is after bounce, where the
         shock, heating, cooling, and plumes matter.
       </p>
       <p>
-        In any dynamical simulation, we have state that gets updated each
-        timestep. In our case, the main state is the density field, entropy
-        field, velocity field, and tracer positions. Density is how much
-        material is there, entropy is a rough way to track how hot/energetic the
-        material is, and velocity is how fast it is moving and in what direction.
-        The tracers are basically marker particles that exist to show the flow
-        of the star fluid. They ride along with the velocity field so we can see
-        where material is going.
+        The state of our dynamical simulation is the density field, entropy
+        field, velocity field, and tracer positions. The tracers are physically meaningless and massless "marker" particles that exist to show the flow
+        of the star fluid. 
       </p>
       <p>
         The way we simulate the shock is still similar to the milestone version.
         The shock is the outward-moving pressure wave that starts the explosion.
         We hardcode the rough shock radius over time, where the radius is just
         how far the shock is from the center. It grows outward, stalls for a
-        bit, and then keeps going after the revival. This comes from the delayed
-        neutrino-driven explosion mechanism that a lot of supernova papers talk
-        about. The shock first loses steam, then neutrino heating helps it start
-        moving outward again. In 3D, we also let the entropy field deform the
+        bit, and then keeps going after the revival -- we hardcode the stall to simulate this effect. 
+        
+        In 3D, we also let the entropy field deform the
         shock surface locally, which gives the shock a much more uneven shape.
       </p>
       <p>
         The shock shell is the thin area around the shock surface. It divides
         the grid into different regions. Outside the shock, the fluid evolves
         with the normal fluid update. Near the shock and gain region, we add
-        heating to represent neutrino energy being deposited back into the star
-        fluid. The gain region is the area where the fluid gains energy from
+        heating to represent neutrino energy being deposited back into the star. 
+        
+        The gain region is the area where the fluid gains energy from
         neutrino heating. Closer to the center, we remove some entropy to
         represent cooling. The heating also varies by angle, which helps break
-        the symmetry and makes the plumes more interesting.
+        the symmetry and makes the plumes more interesting. All in all, these effects of manually reducing and increasing heat in certain regions is a highly simplisitc heuristic on our part, but we found this improves the visual quality of the simulations. 
+
+
       </p>
       <p>
         The velocity update has a few main forces. We have inward gravity from
         the center, buoyancy from hot high-entropy fluid, a shock push around
         the shock shell, and in 3D a swirl/outflow term that bends the flow away
-        from being purely radial. Buoyancy is the same idea as hot air rising,
-        and high-entropy fluid is our hot energetic fluid. Radial means straight
-        outward from the center. The buoyancy part is important because it is
-        what makes hot plumes rise and push the shock into those uneven shapes.
+        from being purely radial. The buoyancy provides the effect of "rising plumes" and pushes the shock into the uneven shapes. 
       </p>
 
       <div class="todo-image">
@@ -204,17 +195,9 @@
       <h3>Going from 2D to 3D</h3>
       <p>
         We originally settled for a 2D fluid simulation, imagining the star as a
-        cylinder and the shockwave as a circle expanding outwards. That was much
-        easier to debug, so we kept using 2D as our quick test case. Once that
-        worked, we moved the same ideas to 3D by making the arrays and advection
-        routines work for either dimension.
-      </p>
-      <p>
-        The 3D version adds a few extra controls: a preferred direction for the
-        explosion, a swirl direction, and a deterministic plume seed. The plume
-        seed is a fixed pattern made from sine waves. Since it is deterministic,
-        the same settings make the same seed every time. It gives the shock
-        small bumps that grow into repeatable asymmetric plumes.
+        cylinder and the shockwave as a circle expanding outwards. After getting our 2D simulation working pretty well (we have some preliminary results in our milestone report), we extended 
+        the update dynamics to 3D. The 3D version adds a few extra controls: a preferred direction for the
+        explosion, a swirl direction, and a deterministic plume seed. The plume seed is a fixed pattern from sine waves which provides an extra breaking of radial symmetry, giving the unevenness. 
       </p>
 
       <div class="todo-image">
@@ -258,18 +241,16 @@
 
       <p>
         We also added camera paths for videos. One annoying bug was that the
-        camera used the raw solver step even though we saved every 4th frame. So
+        camera used the raw solver step even though we saved every 4th frame, which led to
         the camera would randomly jump in the video. The fix was to move the
         camera based on the output frame number instead.
       </p>
 
       <h3>Interactive Web Viewer</h3>
       <p>
-        As a stretch goal, we made a Three.js viewer. We export saved snapshots
-        to JSON and load them in the browser. You can rotate around the result,
-        move through time with a slider, and switch between the volume-looking
-        view, plume particles, and tracer particles. It is a nicer way to
-        inspect the run than flipping through PNGs.
+        As our final step, we made an interactive Three.js viewer. We export saved snapshots
+        to JSON and load them in the browser. The interactive view allows you to rotate around the supernova, move through time with a slider, and switch between the multiple views of 
+        both the volume and plume particles, tracer particles, or just the volume. We think it came out really nice! 
       </p>
 
       <div class="todo-image">
@@ -282,46 +263,62 @@
 
       <h3>Problems we ran into</h3>
       <p>
-        <strong>Everything looked like a perfect sphere.</strong> Our first
-        working simulator made a clean expanding circle/sphere. That was neat
-        for about five seconds, but the supernova needed more structure. All of
-        our forces were radial, so of course nothing interesting happened. We
-        fixed this by adding angular heating patterns and plume seeds so some
-        parts of the shock get pushed more than others.
+        Radial symmetry: In our first implementation, our simulator was just a clean expanding circle/sphere, and this is because there was no 
+        lack of radial symmetry in any of our dynamics. This of course is not what happens in a real supernova. To fix this, we
+        added explicit angular heating patterns and plume seeds so some
+        parts of the shock get pushed more than others, which motivated the sinusoidal patterns discussed above. 
       </p>
       <p>
-        <strong>The 3D render looked like a glowing blob.</strong> Our first 3D
-        render made opacity depend on density. Opacity means how see-through
-        something is. This was a bad idea. The whole image turned into a smooth
+        Our first 3D
+        render made opacity depend on density and ended up looking kinda like a glowing blob. The whole image turned into a smooth
         orange ball, and all the actual plume detail disappeared. We changed
         opacity to depend more on plume boundaries, heating, and the shock band,
         which made the structure show up.
       </p>
       <p>
-        <strong>Camera jumps in the video.</strong> We noticed that every time
+       As discussed before, in our initial video implementation we had some weird camera jumps where our camera would snap during view transitions. Specifically, we noticed that every time
         we made a video, the camera snapped around frame 76 to 80. It took us a
         while to figure out, but the issue was just that the camera was using
         the wrong frame counter. It was using solver steps instead of saved
-        output frames.
-      </p>
-      <p>
-        <strong>Browser volume looked blocky.</strong> The first version of the
-        web viewer used a 56&sup3; texture, and it looked pretty blocky. We
-        raised it to 96&sup3;, blurred the opacity data a little before export,
-        and added a small amount of shader jitter. That made it look a lot
-        closer to the offline frames.
+        output frames, and changing this solved the issue. 
       </p>
 
       <h3>Lessons learned</h3>
       <p>
-        The biggest thing we learned is that writing the simulator in a general
-        enough way saved us a lot of time. We could debug fast in 2D and then
-        run the same idea in 3D. Presets also helped a ton because otherwise we
-        would have been manually changing numbers forever. On the rendering
-        side, we learned that raw density by itself is a bad visual cue.
-        Entropy, heating, and plume boundaries are much better for seeing what
-        is happening.
-      </p>
+        Coming into this project, none of us knew much about high-energy astrophysics. We spent
+        a while reading papers on core-collapse supernovae to understand the actual physics before
+        writing any code. The central challenge in real supernova theory is the <em>shock revival
+        problem</em>: a shockwave launches outward from the rebounding core, quickly stalls at
+        a few hundred kilometers as it loses energy to neutrino emission, and then somehow has
+        to be revived. The mechanism that actually revives it is neutrino heating in the
+        gain region. This then drives convection, which feeds the
+        Rayleigh-Taylor and SASI (Standing Accretion Shock Instability) instabilities that break
+        spherical symmetry and push the shock into the uneven plume-covered shape you see in
+        real simulations. It was understanding this chain of stall, neutrino heating, convective instability, and shock revival that allowed us 
+        to create a simplified model of the dynamics by adding heuristics to model each of these individual steps. 
+
+        If we really wanted to simulate neutrino transport entirely (solve Boltzmann equation for billions of neutrinos), this would be a huge HPC problem. In summary, our simplifying components are: 
+
+      <ul>
+        <li>
+          Having a hardcoded shock radius: Instead of computing the shock position from pressure and density evolution, we just hardcode its outwards trajectory through time, having it move outwards, then stall, 
+          then revive. Obviously this is a huge shortcut, but not having to worry about the shock radius evolution instead let us focus on what happens around the shock as opposed to simulating the shock front from first principles. 
+
+
+        </li>
+        <li>
+          Janky heuristic neutrino heating and cooling: The real neutrino transport that defines local heating/cooling rates are based on a bunch of other factors (neutrino luminosity, opactiy, etc)
+          that was once again too hard for us to model from scratch. Instead, we just replaced this with a much simpler spatial rule, to add entropy near the gain region, and remove it closer to the center that's already cooled down. 
+          Then, the angular variation we introduced on top of that to get our asymmetry in the plumes is not physically motivated at all, and instead just a sort of hacky way to arrive at the same convective instabilities 
+          that would emerge from a real simulation. The mechanism might be "wrong," but the visual outcome, which is hot plumes rising through the shock into uneven shapes, 
+          is qualitatively correct because the underlying instability is still real. 
+        </li>
+        <li>
+            Semi-Lagranigan advection: In reality, we would have to solve the entire compressible Navier-Stokes equations for our supernova simulation, which would be fried. Instead, we decided to use semi-Lagrangian advection as covered in class, ignoring compressibility and remaining numerically cheap so we could iterate faster on our ideas. 
+        </li>
+        
+      </ul>
+      
 
       <h2>Results</h2>
 
@@ -416,13 +413,10 @@
       </div>
 
       <h3>Explosive Preset</h3>
+
       <p>
-        We also made an "explosive" preset. This one revives the shock faster,
-        lowers the boundary damping, and tilts the preferred axis more strongly.
-        Boundary damping is
-        how much we slow things down near the edge of the simulation box so they
-        do not behave weirdly at the border. This preset is the more dramatic
-        version, and it was useful to see how much we could push the simulator.
+        When we visualized our 3D simulation in the interactive viewer, we saw that it looked a bit blobby and not like the sort of supernova you might expect 
+        from animations/photos online. TO try and get something closer to that, we made an "explosive" preset, which revives the shock faster, lowers boundary damping, and tilts the preferred axis more strongly. 
       </p>
       <div class="figure-row">
         <figure>
