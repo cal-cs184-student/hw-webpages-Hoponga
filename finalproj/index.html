@@ -184,6 +184,13 @@
           rel="noopener noreferrer"
           >Video</a
         >
+        |
+        <a
+          href="https://cal-cs184-student.github.io/hw-webpages-Hoponga/finalproj/"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Site</a
+        >
       </div>
 
       <br />
@@ -260,14 +267,13 @@
       </figure>
 
       <p>
-        For moving density and entropy forward, we use semi-Lagrangian advection
-        (a big term, we know!). The basic idea is that for each grid cell, we
-        look backward along the velocity field and sample the old value from
-        there. Advection means carrying stuff along with the flow.
+        For moving density and entropy forward, we use semi-Lagrangian
+        advection. The basic idea is that for each grid cell, we look backward
+        along the velocity field and sample the old value from there.
         Semi-Lagrangian advection is the backwards lookup trick that makes the
-        update stable - for this, we used the formulas that we discussed in
-        lecture! The white dot tracers are moved by sampling the velocity where
-        they are and taking a simple Euler step.
+        update of density and entropy stable - for this, we used the formulas
+        that we discussed in lecture!! The white dot tracers are moved by
+        sampling the velocity where they are and taking a simple Euler step.
       </p>
 
       <h3>Going from 2D to 3D</h3>
